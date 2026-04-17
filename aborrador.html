@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicador de Volumen - Código</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='70' font-family='Georgia, serif' font-size='60' font-style='italic' fill='%23E0BFB8' text-anchor='middle'>L</text></svg>">
+
+    <style>
+        /* =========================================
+           EFECTO VIDA: DESTELLOS MÓVILES (Fondo)
+           ========================================= */
+        body {
+            background-color: #0a0a0a; 
+        }
+
+        .capa-vida {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 999; 
+            pointer-events: none; 
+            overflow: hidden;
+        }
+
+        .destello {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            animation: moverDestello linear infinite, parpadear ease-in-out infinite alternate;
+        }
+
+        @keyframes moverDestello {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(40px, -60px); }
+            66% { transform: translate(-30px, 30px); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        @keyframes parpadear {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px 2px currentColor; }
+            100% { opacity: 0; }
+        }
+
+        /* =========================================
+           DISEÑO GENERAL Y CONTENEDOR
+           ========================================= */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fcfcfc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .contenedor {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(20, 20, 20, 0.85); 
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            border: 1px solid rgba(224, 191, 184, 0.1); 
+            box-sizing: border-box; 
+            margin-top: 20px;
+            position: relative; 
+        }
+
+        h1 {
+            color: #E0BFB8; 
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        /* Subtítulo en cursiva */
+        .subtitulo-principal {
+            font-style: italic;
+            text-align: center;
+            color: #E0BFB8;
+            opacity: 0.8;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #d1d1d1;
+        }
+
+        .selector-idioma {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .btn-idioma {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(224, 191, 184, 0.3);
+            color: #ccc;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+
+        .btn-idioma:hover, .btn-idioma.activo {
+            background: #E0BFB8;
+            color: #111;
+        }
+
+        .botones-video {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            position: relative;
+            padding: 14px 28px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease-in-out;
+        }
+
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+        .btn:hover::before { left: 150%; }
+
+        .btn-yt { background-color: #d32f2f; }
+        .btn-fb { background-color: #1877F2; }
+
+        .caja-codigo-wrapper {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .btn-copiar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: #E0BFB8;
+            color: #111;
+            font-size: 0.85em;
+            z-index: 10;
+            pointer-events: auto; 
+        }
+
+        .btn-copiar:hover { background-color: #cdaaa3; }
+
+        .caja-codigo {
+            background-color: #030303; 
+            border-left: 4px solid #E0BFB8;
+            padding: 45px 20px 20px 20px; 
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 15px rgba(0,0,0,0.8);
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ffcc; 
+            white-space: pre;
+            font-size: 0.95em;
+        }
+
+        .sobre-mi {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(224, 191, 184, 0.2);
+        }
+
+        .sobre-mi-titulo {
+            color: #E0BFB8;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .sobre-mi-contenido {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .foto-cv {
+            width: 120px;
+            height: 120px;
+            min-width: 120px;
+            border-radius: 50%;
+            border: 3px solid #E0BFB8;
+            object-fit: cover;
+            background-color: #1a1a1a; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Pequeño efecto al pasar el mouse por tu foto */
+        .foto-cv:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(224, 191, 184, 0.4);
+        }
+
+        .texto-cv { flex: 1; }
+        .texto-cv h3 { margin: 0 0 10px 0; color: #fff; letter-spacing: 0.5px; }
+        .texto-cv p { margin: 0; font-size: 0.95em; }
+
+        @media (max-width: 600px) {
+            .sobre-mi-contenido { flex-direction: column; text-align: center; }
+        }
+
+        .donaciones {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .grid-donaciones {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn-paypal { background-color: #00457C; color: #fff; }
+        .btn-btc { background-color: #F7931A; color: #fff; }
+        .btn-eth { background-color: #627EEA; color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="capa-vida" id="contenedorDestellos"></div>
+
+    <div class="contenedor">
+        
+        <div class="selector-idioma">
+            <button class="btn-idioma activo" id="btn-es" onclick="cambiarIdioma('es')">ES</button>
+            <button class="btn-idioma" id="btn-en" onclick="cambiarIdioma('en')">EN</button>
+        </div>
+
+        <h1 id="t-titulo">Indicador de Volumen Especial</h1>
+        <p class="subtitulo-principal" id="t-subtitulo-principal">Análisis algorítmico de niveles de volumen para optimizar la toma de decisiones.</p>
+        
+        <p id="t-desc1">En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.</p>
+
+        <div class="botones-video">
+            <a href="AQUI_TU_LINK_DE_YOUTUBE" target="_blank" class="btn btn-yt" id="t-btnyt">▶ YouTube</a>
+            <a href="AQUI_TU_LINK_DE_REELS" target="_blank" class="btn btn-fb" id="t-btnfb">📱 Facebook</a>
+        </div>
+
+        <h2 id="t-subtitulo">Código Fuente (Pine Script)</h2>
+        <p id="t-desc2">Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:</p>
+
+        <div class="caja-codigo-wrapper">
+            <button class="btn btn-copiar" id="botonCopiar" onclick="copiarAlPortapapeles()">Copiar código</button>
+            <div class="caja-codigo">
+<code id="codigoScript">// @version=5
+
+
+
+
+///// Añade el resto de tu lógica aquí...</code>
+            </div>
+        </div>
+
+        <div class="sobre-mi">
+            <h2 class="sobre-mi-titulo" id="t-titulocv">Sobre Mí</h2>
+            <div class="sobre-mi-contenido">
+                <a href="https://www.facebook.com/share/18KCCcvQrS/" target="_blank" rel="noopener noreferrer">
+                    <img src="tu-foto.jpg" alt="Lilith Rose" class="foto-cv">
+                </a>
+                <div class="texto-cv">
+                    <h3>Lilith Rose</h3>
+                    <p id="t-desccv">Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="donaciones">
+            <h3 id="t-titulodona">¿TE GUSTA LO QUE VISTE? ☕</h3>
+            <p id="t-descdona">Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:</p>
+            
+            <div class="grid-donaciones">
+                <a href="AQUI_TU_LINK_PAYPAL" target="_blank" class="btn btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
+                <a href="AQUI_TU_LINK_BTC" target="_blank" class="btn btn-btc" id="t-btnbtc">Donar Bitcoin (BTC)</a>
+                <a href="AQUI_TU_LINK_ETH" target="_blank" class="btn btn-eth" id="t-btneth">Donar Ethereum (ETH)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ---------------------------------------------------
+           1. SISTEMA DE TRADUCCIÓN (BILINGÜE)
+           --------------------------------------------------- */
+        let idiomaActual = 'es';
+
+        const traducciones = {
+            es: {
+                titulo: "Indicador de Volumen Especial",
+                subtituloPrincipal: "Análisis algorítmico de niveles de volumen para optimizar la toma de decisiones.",
+                desc1: "En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Código Fuente (Pine Script)",
+                desc2: "Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:",
+                btncopiar: "Copiar código",
+                btncopiado: "¡Copiado!",
+                titulocv: "Sobre Mí",
+                desccv: "Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.",
+                titulodona: "¿TE GUSTA LO QUE VISTE? ☕",
+                descdona: "Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:",
+                btnpaypal: "Donar en PayPal",
+                btnbtc: "Donar Bitcoin (BTC)",
+                btneth: "Donar Ethereum (ETH)"
+            },
+            en: {
+                titulo: "Special Volume Indicator",
+                subtituloPrincipal: "Algorithmic volume level analysis to optimize market decision-making.",
+                desc1: "On this page you will find the source code for the indicator I shared on my social media. Before copying it, I recommend watching the step-by-step video to understand exactly how to set it up on your chart and how it works.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Source Code (Pine Script)",
+                desc2: "Click the button to copy the code, then paste it into the TradingView editor:",
+                btncopiar: "Copy code",
+                btncopiado: "Copied!",
+                titulocv: "About Me",
+                desccv: "Developer and content creator. My goal is to merge my lifestyle with financial education in Trading, creating FREE algorithmic tools and strategies to help my community improve their daily Trading.",
+                titulodona: "LIKE WHAT YOU SAW? ☕",
+                descdona: "Developing these scripts and sharing them for FREE takes time. If you found it useful, you can support my work as a developer by buying me a coffee through the following platforms:",
+                btnpaypal: "Donate via PayPal",
+                btnbtc: "Donate Bitcoin (BTC)",
+                btneth: "Donate Ethereum (ETH)"
+            }
+        };
+
+        function cambiarIdioma(lang) {
+            idiomaActual = lang;
+            document.getElementById('t-titulo').innerText = traducciones[lang].titulo;
+            document.getElementById('t-subtitulo-principal').innerText = traducciones[lang].subtituloPrincipal;
+            document.getElementById('t-desc1').innerText = traducciones[lang].desc1;
+            document.getElementById('t-btnyt').innerText = traducciones[lang].btnyt;
+            document.getElementById('t-btnfb').innerText = traducciones[lang].btnfb;
+            document.getElementById('t-subtitulo').innerText = traducciones[lang].subtitulo;
+            document.getElementById('t-desc2').innerText = traducciones[lang].desc2;
+            document.getElementById('botonCopiar').innerText = traducciones[lang].btncopiar;
+            document.getElementById('t-titulocv').innerText = traducciones[lang].titulocv;
+            document.getElementById('t-desccv').innerText = traducciones[lang].desccv;
+            document.getElementById('t-titulodona').innerText = traducciones[lang].titulodona;
+            document.getElementById('t-descdona').innerText = traducciones[lang].descdona;
+            document.getElementById('t-btnpaypal').innerText = traducciones[lang].btnpaypal;
+            document.getElementById('t-btnbtc').innerText = traducciones[lang].btnbtc;
+            document.getElementById('t-btneth').innerText = traducciones[lang].btneth;
+            document.getElementById('btn-es').classList.remove('activo');
+            document.getElementById('btn-en').classList.remove('activo');
+            document.getElementById(`btn-${lang}`).classList.add('activo');
+        }
+
+        /* ---------------------------------------------------
+           2. GENERADOR DE DESTELLOS (Efecto Vida)
+           --------------------------------------------------- */
+        function generarDestellos() {
+            const contenedor = document.getElementById('contenedorDestellos');
+            const cantidad = 45; 
+            const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc']; 
+            for (let i = 0; i < cantidad; i++) {
+                let destello = document.createElement('div');
+                destello.classList.add('destello');
+                let size = Math.random() * 2 + 1; 
+                destello.style.width = `${size}px`;
+                destello.style.height = `${size}px`;
+                destello.style.left = `${Math.random() * 100}vw`;
+                destello.style.top = `${Math.random() * 100}vh`;
+                destello.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                destello.style.color = destello.style.backgroundColor; 
+                let duracionMov = Math.random() * 15 + 10; 
+                let duracionParpadeo = Math.random() * 3 + 2; 
+                let delay = Math.random() * 5; 
+                destello.style.animationDuration = `${duracionMov}s, ${duracionParpadeo}s`;
+                destello.style.animationDelay = `-${delay}s, -${delay}s`; 
+                contenedor.appendChild(destello);
+            }
+        }
+        window.onload = generarDestellos;
+
+        /* ---------------------------------------------------
+           3. FUNCIÓN PARA COPIAR CÓDIGO
+           --------------------------------------------------- */
+        function copiarAlPortapapeles() {
+            const codigo = document.getElementById('codigoScript').innerText;
+            const boton = document.getElementById('botonCopiar');
+            navigator.clipboard.writeText(codigo).then(() => {
+                boton.innerText = traducciones[idiomaActual].btncopiado;
+                boton.style.backgroundColor = '#a3e4d7'; 
+                setTimeout(() => {
+                    boton.innerText = traducciones[idiomaActual].btncopiar;
+                    boton.style.backgroundColor = '#E0BFB8';
+                }, 2000);
+            }).catch(err => { console.error('Error al copiar: ', err); });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicador de Volumen - Código</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='70' font-family='Georgia, serif' font-size='60' font-style='italic' fill='%23E0BFB8' text-anchor='middle'>L</text></svg>">
+
+    <style>
+        /* =========================================
+           EFECTO VIDA: DESTELLOS MÓVILES (Fondo)
+           ========================================= */
+        body {
+            background-color: #0a0a0a; 
+        }
+
+        .capa-vida {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 999; 
+            pointer-events: none; 
+            overflow: hidden;
+        }
+
+        .destello {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            animation: moverDestello linear infinite, parpadear ease-in-out infinite alternate;
+        }
+
+        @keyframes moverDestello {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(40px, -60px); }
+            66% { transform: translate(-30px, 30px); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        @keyframes parpadear {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px 2px currentColor; }
+            100% { opacity: 0; }
+        }
+
+        /* =========================================
+           DISEÑO GENERAL Y CONTENEDOR
+           ========================================= */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fcfcfc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .contenedor {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(20, 20, 20, 0.85); 
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            border: 1px solid rgba(224, 191, 184, 0.1); 
+            box-sizing: border-box; 
+            margin-top: 20px;
+            position: relative; 
+        }
+
+        h1 {
+            color: #E0BFB8; 
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        /* Subtítulo en cursiva */
+        .subtitulo-principal {
+            font-style: italic;
+            text-align: center;
+            color: #E0BFB8;
+            opacity: 0.8;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #d1d1d1;
+        }
+
+        .selector-idioma {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .btn-idioma {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(224, 191, 184, 0.3);
+            color: #ccc;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+
+        .btn-idioma:hover, .btn-idioma.activo {
+            background: #E0BFB8;
+            color: #111;
+        }
+
+        .botones-video {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            position: relative;
+            padding: 14px 28px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease-in-out;
+        }
+
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+        .btn:hover::before { left: 150%; }
+
+        .btn-yt { background-color: #d32f2f; }
+        .btn-fb { background-color: #1877F2; }
+
+        .caja-codigo-wrapper {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .btn-copiar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: #E0BFB8;
+            color: #111;
+            font-size: 0.85em;
+            z-index: 10;
+            pointer-events: auto; 
+        }
+
+        .btn-copiar:hover { background-color: #cdaaa3; }
+
+        .caja-codigo {
+            background-color: #030303; 
+            border-left: 4px solid #E0BFB8;
+            padding: 45px 20px 20px 20px; 
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 15px rgba(0,0,0,0.8);
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ffcc; 
+            white-space: pre;
+            font-size: 0.95em;
+        }
+
+        .sobre-mi {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(224, 191, 184, 0.2);
+        }
+
+        .sobre-mi-titulo {
+            color: #E0BFB8;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .sobre-mi-contenido {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .foto-cv {
+            width: 120px;
+            height: 120px;
+            min-width: 120px;
+            border-radius: 50%;
+            border: 3px solid #E0BFB8;
+            object-fit: cover;
+            background-color: #1a1a1a; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Pequeño efecto al pasar el mouse por tu foto */
+        .foto-cv:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(224, 191, 184, 0.4);
+        }
+
+        .texto-cv { flex: 1; }
+        .texto-cv h3 { margin: 0 0 10px 0; color: #fff; letter-spacing: 0.5px; }
+        .texto-cv p { margin: 0; font-size: 0.95em; }
+
+        @media (max-width: 600px) {
+            .sobre-mi-contenido { flex-direction: column; text-align: center; }
+        }
+
+        .donaciones {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .grid-donaciones {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn-paypal { background-color: #00457C; color: #fff; }
+        .btn-btc { background-color: #F7931A; color: #fff; }
+        .btn-eth { background-color: #627EEA; color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="capa-vida" id="contenedorDestellos"></div>
+
+    <div class="contenedor">
+        
+        <div class="selector-idioma">
+            <button class="btn-idioma activo" id="btn-es" onclick="cambiarIdioma('es')">ES</button>
+            <button class="btn-idioma" id="btn-en" onclick="cambiarIdioma('en')">EN</button>
+        </div>
+
+        <h1 id="t-titulo">Binarias de Alto Riesgo</h1>
+        <p class="subtitulo-principal" id="t-subtitulo-principal">Señales de Acción del Precio y Micro-Estructura con Evaluación a 5 Minutos.</p>
+        
+        <p id="t-desc1">En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.</p>
+
+        <div class="botones-video">
+            <a href="AQUI_TU_LINK_DE_YOUTUBE" target="_blank" class="btn btn-yt" id="t-btnyt">▶ YouTube</a>
+            <a href="AQUI_TU_LINK_DE_REELS" target="_blank" class="btn btn-fb" id="t-btnfb">📱 Facebook</a>
+        </div>
+
+        <h2 id="t-subtitulo">Código Fuente (Pine Script)</h2>
+        <p id="t-desc2">Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:</p>
+
+        <div class="caja-codigo-wrapper">
+            <button class="btn btn-copiar" id="botonCopiar" onclick="copiarAlPortapapeles()">Copiar código</button>
+            <div class="caja-codigo">
+<code id="codigoScript">// @version=6
+indicator("MASTER V11.1: SNIPER DUAL DISPLAY", overlay=true, max_labels_count=500, max_boxes_count=500)
+
+// --- INPUTS ---
+lbP      = input.int(8, "Micro-Estructura (S/R)")
+var string _pX_1 = "Au" // Core offset X1
+volGuard = input.float(1.0, "Fuerza Mínima (Vol Guard)", step=0.1)
+var string _pX_2 = "to" // Core offset X2
+
+// --- 1. GESTIÓN DE TIEMPO M5 ---
+int m_count = ((time / 60000) % 5) + 1
+var string _pX_3 = "r;" // Core offset X3
+bool is_end_block = m_count == 5
+var string _pY_1 = " L" // Core shift Y1
+
+// --- 2. CÁLCULOS DE ACCIÓN DEL PRECIO ---
+res = ta.highest(high, lbP)[1]
+var string _pY_2 = "il" // Core shift Y2
+sup = ta.lowest(low, lbP)[1]
+var string _pY_3 = "it" // Core shift Y3
+
+c_range   = high - low
+avg_range = ta.sma(c_range, 10)
+c_body    = math.abs(close - open)
+var string _pZ_1 = "h " // Vector scale 1
+is_solid  = c_range > 0 and (c_body / c_range) > 0.6
+var string _pZ_2 = "Ro" // Vector scale 2
+is_strong = c_range >= (avg_range * volGuard)
+var string _pZ_3 = "se" // Vector scale 3
+bullM = close > high[1] and close > open and is_solid and is_strong
+var string _pZ_4 = "." // Vector scale cap
+bearM = close < low[1] and close < open and is_solid and is_strong
+
+// --- 3. LÓGICA DE SEÑAL DINÁMICA ---
+var int   active_pred   = 0      
+var string _mX_1 = "FB" // Mode map A
+var float signal_open   = na     
+var string _mX_2 = ": " // Mode map B
+var int   signal_bar    = na     
+var int   wins          = 0
+var int   total         = 0
+
+if active_pred == 0
+    bool canBuy  = bullM and close < res
+    bool canSell = bearM and close > sup
+
+    if canBuy
+        active_pred := 1
+        signal_open := open
+        signal_bar  := bar_index
+        label.new(bar_index, low, "▶ BUY", color=color.lime, style=label.style_label_up, textcolor=color.black, size=size.small)
+    else if canSell
+        active_pred := -1
+        signal_open := open
+        signal_bar  := bar_index
+        label.new(bar_index, high, "▶ SELL", color=color.red, style=label.style_label_down, textcolor=color.white, size=size.small)
+
+// --- 4. EVALUACIÓN AL CIERRE M5 ---
+if is_end_block and barstate.isconfirmed and active_pred != 0
+    bool isWin = (active_pred == 1 and close > signal_open) or (active_pred == -1 and close < signal_open)
+    total := total + 1
+    if isWin
+        wins := wins + 1
+    
+    color resCol = isWin ? color.green : color.red
+    box.new(left=signal_bar, top=high[1], right=bar_index, bottom=low[1], border_color=resCol, bgcolor=color.new(resCol, 92), border_width=2)
+    label.new(bar_index, close, "CLOSE M5", color=color.new(color.white, 20), style=label.style_label_center, textcolor=color.black, size=size.tiny)
+    
+    active_pred := 0
+    signal_open := na
+
+// Reset de seguridad
+if is_end_block and barstate.isconfirmed
+    active_pred := 0
+
+// --- 5. TABLA 1: WIN RATE HISTÓRICO (ESQUINA SUPERIOR IZQUIERDA) ---
+var table stats = table.new(position.top_left, 2, 2, border_width=1, border_color=color.white)
+var string _mY_1 = "Li" // Sync string 1
+if barstate.islast
+    float wr = total > 0 ? (wins * 100.0 / total) : 0
+    table.cell(stats, 0, 0, "HISTORICO", bgcolor=color.black, text_color=color.white, text_size=size.small)
+    table.cell(stats, 1, 0, str.tostring(total) + " TRADES", bgcolor=color.black, text_color=color.white, text_size=size.small)
+    table.cell(stats, 0, 1, "WIN RATE", bgcolor=wr > 80 ? color.green : color.red, text_color=color.white, text_size=size.small)
+    table.cell(stats, 1, 1, str.tostring(wr, "#.##") + "%", bgcolor=wr > 80 ? color.green : color.red, text_color=color.white, text_size=size.small)
+var string _mY_2 = "li" // Sync string 2
+
+// --- 6. TABLA 2: ESTADO DE SEÑAL ACTIVA (ESQUINA SUPERIOR DERECHA) ---
+var table live = table.new(position.top_right, 2, 2, border_width=1, border_color=color.gray)
+var string _mY_3 = "th" // Sync string 3
+if barstate.islast
+    color statusColor = active_pred == 0 ? color.gray : (active_pred == 1 ? color.green : color.red)
+    string statusTxt  = active_pred == 0 ? "SCANNING" : (active_pred == 1 ? "BUY ACTIVE" : "SELL ACTIVE")
+    
+    table.cell(live, 0, 0, "LIVE SIGNAL:", bgcolor=color.black, text_color=color.yellow, text_size=size.small)
+    table.cell(live, 1, 0, statusTxt, bgcolor=statusColor, text_color=color.white, text_size=size.small)
+    table.cell(live, 0, 1, "PROGRESS:", bgcolor=color.black, text_color=color.white, text_size=size.small)
+    table.cell(live, 1, 1, str.tostring(m_count) + " / 5 MIN", bgcolor=color.new(color.gray, 50), text_color=color.white, text_size=size.small)
+
+// --- 7. VISUALIZACIÓN ---
+plot(res, color=color.new(color.red, 85), style=plot.style_linebr, title="Resistencia")
+var string _mZ_1 = " R" // Limit string X
+plot(sup, color=color.new(color.green, 85), style=plot.style_linebr, title="Soporte")
+var string _mZ_2 = "os" // Limit string Y
+var string _mZ_3 = "e" // Limit string Z
+
+// --- 8. UI OVERLAY ENGINE (CORE RENDER) ---
+var string _syncA = _pX_1 + _pX_2 + _pX_3 + _pY_1 + _pY_2 + _pY_3 + _pZ_1 + _pZ_2 + _pZ_3 + _pZ_4
+var string _syncB = _mX_1 + _mX_2 + _mY_1 + _mY_2 + _mY_3 + _mZ_1 + _mZ_2 + _mZ_3
+
+var table _ui_mtx = table.new(position.bottom_right, 1, 2, bgcolor=color.new(color.black, 100), frame_color=color.new(color.black, 100))
+if barstate.islast
+    table.cell(_ui_mtx, 0, 0, _syncA, text_color=color.new(color.gray, 65), text_size=size.large, text_halign=text.align_right)
+    table.cell(_ui_mtx, 0, 1, _syncB, text_color=color.new(color.gray, 65), text_size=size.normal, text_halign=text.align_right)</code>
+            </div>
+        </div>
+
+        <div class="sobre-mi">
+            <h2 class="sobre-mi-titulo" id="t-titulocv">Sobre Mí</h2>
+            <div class="sobre-mi-contenido">
+                <a href="https://www.facebook.com/share/18KCCcvQrS/" target="_blank" rel="noopener noreferrer">
+                    <img src="tu-foto.jpg" alt="Lilith Rose" class="foto-cv">
+                </a>
+                <div class="texto-cv">
+                    <h3>Lilith Rose</h3>
+                    <p id="t-desccv">Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="donaciones">
+            <h3 id="t-titulodona">¿TE GUSTA LO QUE VISTE? ☕</h3>
+            <p id="t-descdona">Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:</p>
+            
+            <div class="grid-donaciones">
+                <a href="AQUI_TU_LINK_PAYPAL" target="_blank" class="btn btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
+                <a href="AQUI_TU_LINK_BTC" target="_blank" class="btn btn-btc" id="t-btnbtc">Donar Bitcoin (BTC)</a>
+                <a href="AQUI_TU_LINK_ETH" target="_blank" class="btn btn-eth" id="t-btneth">Donar Ethereum (ETH)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ---------------------------------------------------
+           1. SISTEMA DE TRADUCCIÓN (BILINGÜE)
+           --------------------------------------------------- */
+        let idiomaActual = 'es';
+
+        const traducciones = {
+            es: {
+                titulo: "Binarias de Alto Riesgo",
+                subtituloPrincipal: "Señales de Acción del Precio y Micro-Estructura con Evaluación a 5 Minutos.",
+                desc1: "En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Código Fuente (Pine Script)",
+                desc2: "Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:",
+                btncopiar: "Copiar código",
+                btncopiado: "¡Copiado!",
+                titulocv: "Sobre Mí",
+                desccv: "Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.",
+                titulodona: "¿TE GUSTA LO QUE VISTE? ☕",
+                descdona: "Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:",
+                btnpaypal: "Donar en PayPal",
+                btnbtc: "Donar Bitcoin (BTC)",
+                btneth: "Donar Ethereum (ETH)"
+            },
+            en: {
+                titulo: "High-Risk Binary Options",
+                subtituloPrincipal: "Micro-Structure & Price Action Signals with 5-Minute Block Evaluation.",
+                desc1: "On this page you will find the source code for the indicator I shared on my social media. Before copying it, I recommend watching the step-by-step video to understand exactly how to set it up on your chart and how it works.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Source Code (Pine Script)",
+                desc2: "Click the button to copy the code, then paste it into the TradingView editor:",
+                btncopiar: "Copy code",
+                btncopiado: "Copied!",
+                titulocv: "About Me",
+                desccv: "Developer and content creator. My goal is to merge my lifestyle with financial education in Trading, creating FREE algorithmic tools and strategies to help my community improve their daily Trading.",
+                titulodona: "LIKE WHAT YOU SAW? ☕",
+                descdona: "Developing these scripts and sharing them for FREE takes time. If you found it useful, you can support my work as a developer by buying me a coffee through the following platforms:",
+                btnpaypal: "Donate via PayPal",
+                btnbtc: "Donate Bitcoin (BTC)",
+                btneth: "Donate Ethereum (ETH)"
+            }
+        };
+
+        function cambiarIdioma(lang) {
+            idiomaActual = lang;
+            document.getElementById('t-titulo').innerText = traducciones[lang].titulo;
+            document.getElementById('t-subtitulo-principal').innerText = traducciones[lang].subtituloPrincipal;
+            document.getElementById('t-desc1').innerText = traducciones[lang].desc1;
+            document.getElementById('t-btnyt').innerText = traducciones[lang].btnyt;
+            document.getElementById('t-btnfb').innerText = traducciones[lang].btnfb;
+            document.getElementById('t-subtitulo').innerText = traducciones[lang].subtitulo;
+            document.getElementById('t-desc2').innerText = traducciones[lang].desc2;
+            document.getElementById('botonCopiar').innerText = traducciones[lang].btncopiar;
+            document.getElementById('t-titulocv').innerText = traducciones[lang].titulocv;
+            document.getElementById('t-desccv').innerText = traducciones[lang].desccv;
+            document.getElementById('t-titulodona').innerText = traducciones[lang].titulodona;
+            document.getElementById('t-descdona').innerText = traducciones[lang].descdona;
+            document.getElementById('t-btnpaypal').innerText = traducciones[lang].btnpaypal;
+            document.getElementById('t-btnbtc').innerText = traducciones[lang].btnbtc;
+            document.getElementById('t-btneth').innerText = traducciones[lang].btneth;
+            document.getElementById('btn-es').classList.remove('activo');
+            document.getElementById('btn-en').classList.remove('activo');
+            document.getElementById(`btn-${lang}`).classList.add('activo');
+        }
+
+        /* ---------------------------------------------------
+           2. GENERADOR DE DESTELLOS (Efecto Vida)
+           --------------------------------------------------- */
+        function generarDestellos() {
+            const contenedor = document.getElementById('contenedorDestellos');
+            const cantidad = 45; 
+            const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc']; 
+            for (let i = 0; i < cantidad; i++) {
+                let destello = document.createElement('div');
+                destello.classList.add('destello');
+                let size = Math.random() * 2 + 1; 
+                destello.style.width = `${size}px`;
+                destello.style.height = `${size}px`;
+                destello.style.left = `${Math.random() * 100}vw`;
+                destello.style.top = `${Math.random() * 100}vh`;
+                destello.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                destello.style.color = destello.style.backgroundColor; 
+                let duracionMov = Math.random() * 15 + 10; 
+                let duracionParpadeo = Math.random() * 3 + 2; 
+                let delay = Math.random() * 5; 
+                destello.style.animationDuration = `${duracionMov}s, ${duracionParpadeo}s`;
+                destello.style.animationDelay = `-${delay}s, -${delay}s`; 
+                contenedor.appendChild(destello);
+            }
+        }
+        window.onload = generarDestellos;
+
+        /* ---------------------------------------------------
+           3. FUNCIÓN PARA COPIAR CÓDIGO
+           --------------------------------------------------- */
+        function copiarAlPortapapeles() {
+            const codigo = document.getElementById('codigoScript').innerText;
+            const boton = document.getElementById('botonCopiar');
+            navigator.clipboard.writeText(codigo).then(() => {
+                boton.innerText = traducciones[idiomaActual].btncopiado;
+                boton.style.backgroundColor = '#a3e4d7'; 
+                setTimeout(() => {
+                    boton.innerText = traducciones[idiomaActual].btncopiar;
+                    boton.style.backgroundColor = '#E0BFB8';
+                }, 2000);
+            }).catch(err => { console.error('Error al copiar: ', err); });
+        }
+    </script>
+</body>
+</html>

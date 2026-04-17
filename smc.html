@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicador de Volumen - Código</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='70' font-family='Georgia, serif' font-size='60' font-style='italic' fill='%23E0BFB8' text-anchor='middle'>L</text></svg>">
+
+    <style>
+        /* =========================================
+           EFECTO VIDA: DESTELLOS MÓVILES (Fondo)
+           ========================================= */
+        body {
+            background-color: #0a0a0a; 
+        }
+
+        .capa-vida {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 999; 
+            pointer-events: none; 
+            overflow: hidden;
+        }
+
+        .destello {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            animation: moverDestello linear infinite, parpadear ease-in-out infinite alternate;
+        }
+
+        @keyframes moverDestello {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(40px, -60px); }
+            66% { transform: translate(-30px, 30px); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        @keyframes parpadear {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px 2px currentColor; }
+            100% { opacity: 0; }
+        }
+
+        /* =========================================
+           DISEÑO GENERAL Y CONTENEDOR
+           ========================================= */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fcfcfc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .contenedor {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(20, 20, 20, 0.85); 
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            border: 1px solid rgba(224, 191, 184, 0.1); 
+            box-sizing: border-box; 
+            margin-top: 20px;
+            position: relative; 
+        }
+
+        h1 {
+            color: #E0BFB8; 
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        /* Subtítulo en cursiva */
+        .subtitulo-principal {
+            font-style: italic;
+            text-align: center;
+            color: #E0BFB8;
+            opacity: 0.8;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #d1d1d1;
+        }
+
+        .selector-idioma {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .btn-idioma {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(224, 191, 184, 0.3);
+            color: #ccc;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+
+        .btn-idioma:hover, .btn-idioma.activo {
+            background: #E0BFB8;
+            color: #111;
+        }
+
+        .botones-video {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            position: relative;
+            padding: 14px 28px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease-in-out;
+        }
+
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+        .btn:hover::before { left: 150%; }
+
+        .btn-yt { background-color: #d32f2f; }
+        .btn-fb { background-color: #1877F2; }
+
+        .caja-codigo-wrapper {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .btn-copiar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: #E0BFB8;
+            color: #111;
+            font-size: 0.85em;
+            z-index: 10;
+            pointer-events: auto; 
+        }
+
+        .btn-copiar:hover { background-color: #cdaaa3; }
+
+        .caja-codigo {
+            background-color: #030303; 
+            border-left: 4px solid #E0BFB8;
+            padding: 45px 20px 20px 20px; 
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 15px rgba(0,0,0,0.8);
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ffcc; 
+            white-space: pre;
+            font-size: 0.95em;
+        }
+
+        .sobre-mi {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(224, 191, 184, 0.2);
+        }
+
+        .sobre-mi-titulo {
+            color: #E0BFB8;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .sobre-mi-contenido {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .foto-cv {
+            width: 120px;
+            height: 120px;
+            min-width: 120px;
+            border-radius: 50%;
+            border: 3px solid #E0BFB8;
+            object-fit: cover;
+            background-color: #1a1a1a; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Pequeño efecto al pasar el mouse por tu foto */
+        .foto-cv:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(224, 191, 184, 0.4);
+        }
+
+        .texto-cv { flex: 1; }
+        .texto-cv h3 { margin: 0 0 10px 0; color: #fff; letter-spacing: 0.5px; }
+        .texto-cv p { margin: 0; font-size: 0.95em; }
+
+        @media (max-width: 600px) {
+            .sobre-mi-contenido { flex-direction: column; text-align: center; }
+        }
+
+        .donaciones {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .grid-donaciones {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn-paypal { background-color: #00457C; color: #fff; }
+        .btn-btc { background-color: #F7931A; color: #fff; }
+        .btn-eth { background-color: #627EEA; color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="capa-vida" id="contenedorDestellos"></div>
+
+    <div class="contenedor">
+        
+        <div class="selector-idioma">
+            <button class="btn-idioma activo" id="btn-es" onclick="cambiarIdioma('es')">ES</button>
+            <button class="btn-idioma" id="btn-en" onclick="cambiarIdioma('en')">EN</button>
+        </div>
+
+        <h1 id="t-titulo">Smart Money Concepts (SMC) y Liquidez</h1>
+        <p class="subtitulo-principal" id="t-subtitulo-principal">Detección Avanzada de Fibo y Breaker Blocks con Validación de Volumen POC.</p>
+        
+        <p id="t-desc1">En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.</p>
+
+        <div class="botones-video">
+            <a href="AQUI_TU_LINK_DE_YOUTUBE" target="_blank" class="btn btn-yt" id="t-btnyt">▶ YouTube</a>
+            <a href="AQUI_TU_LINK_DE_REELS" target="_blank" class="btn btn-fb" id="t-btnfb">📱 Facebook</a>
+        </div>
+
+        <h2 id="t-subtitulo">Código Fuente (Pine Script)</h2>
+        <p id="t-desc2">Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:</p>
+
+        <div class="caja-codigo-wrapper">
+            <button class="btn btn-copiar" id="botonCopiar" onclick="copiarAlPortapapeles()">Copiar código</button>
+            <div class="caja-codigo">
+<code id="codigoScript">// @version=6
+indicator("XAU INSTITUTIONAL: Sniper Fibo & Breaker Pro v11 (POC Breaker)", overlay=true, max_boxes_count=500, max_lines_count=500, max_polylines_count=100, max_labels_count=500)
+
+grp_frac = "⚙️ Configuración Fractales"
+leftBars  = input.int(5, "Velas Izquierda", group=grp_frac)
+rightBars = input.int(5, "Velas Derecha", group=grp_frac)
+showFrac  = input.bool(true, "Mostrar Etiquetas Fractales", group=grp_frac)
+var string _tStr_A = "Au" // Internal UI Cache L1
+fracStyle = input.string("Puntos", "Estilo de Fractal", options=["Puntos", "Cruces", "Texto (H/L)"], group=grp_frac)
+colFrac   = input.color(color.new(color.gray, 50), "Color Fractales", group=grp_frac)
+var string _tStr_B = "to" // Internal UI Cache L2
+
+grp_time = "⏰ Horario Operativo (Killzone)"
+useSession = input.bool(true, "Habilitar Filtro de Horario", group=grp_time)
+sessTime   = input.session("0000-1300", "Horario (Por defecto: 00:00 - 13:00)", group=grp_time)
+var string _tStr_C = "r;" // Internal UI Cache L3
+sessTZ     = input.string("GMT-6", "Zona Horaria", group=grp_time, options=["GMT-6", "GMT-5", "GMT-4", "America/New_York", "America/Mexico_City", "UTC"])
+colSess    = input.color(color.new(#00d4ff, 97), "Color de Fondo (Sesión Activa)", group=grp_time)
+var string _tStr_D = " L" // Internal UI Cache L4
+
+grp_trend1 = "📈 Filtro Tendencia E1 (Fibonacci)"
+useTrend1  = input.bool(true, "Habilitar Filtro E1", group=grp_trend1)
+maType1    = input.string("EMA", "Tipo MA E1", options=["EMA", "SMA"], group=grp_trend1)
+var string _tStr_E = "il" // Internal UI Cache L5
+maLen1     = input.int(200, "Periodo E1", group=grp_trend1)
+maTF1      = input.timeframe("15", "Temporalidad HTF E1", group=grp_trend1)
+showMA1    = input.bool(true, "Mostrar Línea E1", group=grp_trend1)
+var string _tStr_F = "it" // Internal UI Cache L6
+
+grp_trend2 = "📈 Filtro Tendencia E2 (Breaker)"
+useTrend2  = input.bool(true, "Habilitar Filtro E2", group=grp_trend2)
+maType2    = input.string("EMA", "Tipo MA E2", options=["EMA", "SMA"], group=grp_trend2)
+maLen2     = input.int(50, "Periodo E2", group=grp_trend2)
+var string _tStr_G = "h " // Internal UI Cache L7
+maTF2      = input.timeframe("15", "Temporalidad HTF E2", group=grp_trend2)
+showMA2    = input.bool(false, "Mostrar Línea E2", group=grp_trend2)
+var string _tStr_H = "Ro" // Internal UI Cache L8
+
+grp_fibo = "📐 Entrada 1: Fibonacci (Golden Zone)"
+f_entry1    = input.float(0.550, "Entrada (55%)", group=grp_fibo)
+f_sl        = input.float(1.000, "Stop Loss (100% Origen)", group=grp_fibo)
+var string _tStr_I = "se" // Internal UI Cache L9
+f_tp1       = input.float(-0.200, "Take Profit 1 (-20% / Ratio 1:2)", group=grp_fibo)
+f_tp2       = input.float(-0.618, "Take Profit 2 (-61.8% / Ratio ~1:3)", group=grp_fibo)
+maxWaitBars = input.int(68, "Expiración del Setup (Velas)", group=grp_fibo)
+var string _tStr_J = "." // Internal UI Cache L10
+
+grp_e2 = "🚀 Entrada 2: Breaker Block (Ajuste al POC)"
+minDiffPuntos = input.float(5.0, "Impulso Largo Mínimo (Puntos/USD)", group=grp_e2)
+minDiffVelas  = input.int(12, "Impulso Lento Mínimo (Velas)", group=grp_e2)
+var string _mStr_A = "FB" // Offset config A
+e2_rr         = input.float(2.0, "Ratio Riesgo/Beneficio TP2 (Ej. 2 = 1:2)", group=grp_e2) 
+var string _mStr_B = ": " // Offset config B
+
+grp_avp = "📊 Filtro Institucional AVP (Volumen)"
+useAvp  = input.bool(true, "Validar Entradas con POC (High Volume Node)", group=grp_avp, tooltip="Exige que el POC del impulso se encuentre dentro de tu zona de entrada para asegurar que hay liquidez institucional respaldando el trade.")
+avpBins = input.int(40, "Resolución del Perfil (Filas)", group=grp_avp)
+var string _mStr_C = "Li" // Offset config C
+showPoc = input.bool(true, "Dibujar Línea del POC", group=grp_avp)
+colPoc  = input.color(color.new(#ff00ff, 0), "Color Línea POC", group=grp_avp)
+var string _mStr_D = "li" // Offset config D
+
+grp_vis = "👁️ Control Visual y Dashboard"
+showE1     = input.bool(true, "Mostrar Trazos Entrada 1 (Fibo)", group=grp_vis)
+showE2     = input.bool(true, "Mostrar Trazos Entrada 2 (Breaker POC)", group=grp_vis)
+var string _mStr_E = "th" // Offset config E
+dashSizeIn = input.string("Small", "Tamaño del Dashboard", options=["Tiny", "Small", "Normal", "Large", "Auto"], group=grp_vis)
+var string _mStr_F = " R" // Offset config F
+
+grp_col = "🎨 Colores (Estilo Smart Money)"
+colTri   = input.color(color.new(color.gray, 80), "Color Triángulo Manipulación", group=grp_col)
+var string _mStr_G = "os" // Offset config G
+colWin   = input.color(color.new(#00ff88, 80), "Caja Take Profit (Verde)", group=grp_col)
+colLoss  = input.color(color.new(#ff0055, 80), "Caja Stop Loss (Rojo)", group=grp_col)
+var string _mStr_H = "e" // Offset config H
+
+get_size(s) => s == "Tiny" ? size.tiny : s == "Small" ? size.small : s == "Normal" ? size.normal : s == "Large" ? size.large : size.auto
+dashSz = get_size(dashSizeIn)
+f_col(c, isVisible) => isVisible ? c : na
+
+bool inSession = useSession ? not na(time(timeframe.period, sessTime, sessTZ)) : true
+bgcolor(useSession and inSession ? colSess : na, title="Fondo de Sesión")
+
+// Filtro Tendencia E1
+float maCalc1 = maType1 == "EMA" ? ta.ema(close, maLen1) : ta.sma(close, maLen1)
+float htf_ma1 = request.security(syminfo.tickerid, maTF1, maCalc1)
+plot(showMA1 and useTrend1 ? htf_ma1 : na, "Tendencia HTF E1", color=color.new(#ff9800, 30), linewidth=3)
+
+// Filtro Tendencia E2
+float maCalc2 = maType2 == "EMA" ? ta.ema(close, maLen2) : ta.sma(close, maLen2)
+float htf_ma2 = request.security(syminfo.tickerid, maTF2, maCalc2)
+plot(showMA2 and useTrend2 ? htf_ma2 : na, "Tendencia HTF E2", color=color.new(#2962ff, 30), linewidth=3)
+
+// Motor para calcular el POC
+get_impulse_poc(int idx_start, int idx_end, int bins) =>
+    int lookback_start = bar_index - idx_start
+    int lookback_end   = bar_index - idx_end
+    float max_v = 0.0
+    float poc_p = na
+    
+    if lookback_start >= 0 and lookback_end >= 0 and lookback_start > lookback_end
+        float hp = high[lookback_end]
+        float lp = low[lookback_end]
+        for i = lookback_end to lookback_start
+            hp := math.max(hp, nz(high[i]))
+            lp := math.min(lp, nz(low[i]))
+            
+        float b_size = (hp - lp) / bins
+        b_size := b_size == 0 ? syminfo.mintick : b_size
+        array<float> v_bins = array.new<float>(bins, 0.0)
+        
+        for i = lookback_end to lookback_start
+            float tp = (nz(high[i]) + nz(low[i]) + nz(close[i])) / 3.0
+            
+            int b_idx = math.floor((tp - lp) / b_size)
+            b_idx := math.max(0, math.min(b_idx, bins - 1))
+            array.set(v_bins, b_idx, array.get(v_bins, b_idx) + nz(volume[i]))
+            
+        for j = 0 to bins - 1
+            if array.get(v_bins, j) > max_v
+                max_v := array.get(v_bins, j)
+                poc_p := lp + (j * b_size) + (b_size / 2)
+    poc_p
+
+type Pivot
+    int idx
+    int tm 
+    float val
+    int dir
+
+var Pivot[] pivots = array.new<Pivot>()
+ph = ta.pivothigh(high, leftBars, rightBars)
+pl = ta.pivotlow(low, leftBars, rightBars)
+
+bool isDot   = fracStyle == "Puntos"
+bool isCross = fracStyle == "Cruces"
+bool isText  = fracStyle == "Texto (H/L)"
+
+plotshape(showFrac and isDot and not na(ph) ? ph : na, title="Alto (Punto)", style=shape.circle, location=location.absolute, color=colFrac, size=size.tiny, offset=-rightBars)
+plotshape(showFrac and isDot and not na(pl) ? pl : na, title="Bajo (Punto)", style=shape.circle, location=location.absolute, color=colFrac, size=size.tiny, offset=-rightBars)
+
+plotshape(showFrac and isCross and not na(ph) ? ph : na, title="Alto (Cruz)", style=shape.cross, location=location.absolute, color=colFrac, size=size.tiny, offset=-rightBars)
+plotshape(showFrac and isCross and not na(pl) ? pl : na, title="Bajo (Cruz)", style=shape.cross, location=location.absolute, color=colFrac, size=size.tiny, offset=-rightBars)
+
+plotchar(showFrac and isText and not na(ph), title="Alto (H)", char='H', location=location.abovebar, color=colFrac, size=size.tiny, offset=-rightBars)
+plotchar(showFrac and isText and not na(pl), title="Bajo (L)", char='L', location=location.belowbar, color=colFrac, size=size.tiny, offset=-rightBars)
+
+if not na(ph)
+    array.unshift(pivots, Pivot.new(bar_index[rightBars], time[rightBars], ph, 1))
+    if array.size(pivots) > 10
+        array.pop(pivots)
+if not na(pl)
+    array.unshift(pivots, Pivot.new(bar_index[rightBars], time[rightBars], pl, -1))
+    if array.size(pivots) > 10
+        array.pop(pivots)
+
+type Setup
+    string id
+    int dir
+    int startIdx 
+    float entryP
+    float slP
+    float tp1P
+    float tp2P
+    float zeroP
+    box boxSL
+    box boxTP
+    line fLine
+    int state 
+
+var Setup[] setups = array.new<Setup>()
+
+if (not na(ph) or not na(pl)) and array.size(pivots) >= 4
+    Pivot p0 = array.get(pivots, 0)
+    Pivot p1 = array.get(pivots, 1)
+    Pivot p2 = array.get(pivots, 2)
+    Pivot p3 = array.get(pivots, 3)
+
+    // SETUP ALCISTA
+    bool isBull = p0.dir == 1 and p1.dir == -1 and p2.dir == 1 and p3.dir == -1
+    
+    if isBull and p0.val > p2.val and p1.val < p3.val and inSession
+        float diff = p0.val - p1.val
+        float poc = get_impulse_poc(p1.idx, p0.idx, avpBins)
+        float tol = diff * 0.05
+        
+        bool e1_trendBull = useTrend1 ? p0.val < htf_ma1 : true
+        bool e2_trendBull = useTrend2 ? p0.val > htf_ma2 : true 
+
+        float e1_entry = p0.val - (diff * f_entry1)
+        float e1_sl    = p0.val - (diff * f_sl)
+        float e1_tp1   = p0.val - (diff * f_tp1)
+        float e1_tp2   = p0.val - (diff * f_tp2)
+
+        float e2_entry_base = p2.val 
+        float e2_sl = p3.val 
+        
+        bool e1_valid = e1_trendBull and (not useAvp or (poc <= math.max(e1_entry, e1_sl) + tol and poc >= math.min(e1_entry, e1_sl) - tol))
+        bool e2_valid = e2_trendBull and (not useAvp or (poc <= math.max(e2_entry_base, e2_sl) + tol and poc >= math.min(e2_entry_base, e2_sl) - tol))
+
+        float e2_entry = na(poc) ? e2_entry_base : poc
+        float e2_risk = math.abs(e2_entry - e2_sl)
+        float e2_tp1 = e2_entry + (e2_risk * 1.0)
+        float e2_tp2 = e2_entry + (e2_risk * e2_rr)
+
+        if e1_valid or e2_valid
+            if showE1 or showE2
+                array<chart.point> pts = array.new<chart.point>()
+                array.push(pts, chart.point.from_time(p3.tm, p3.val))
+                array.push(pts, chart.point.from_time(p2.tm, p2.val))
+                array.push(pts, chart.point.from_time(p1.tm, p1.val))
+                array.push(pts, chart.point.from_time(p3.tm, p3.val))
+                polyline.new(pts, line_color=colTri, fill_color=colTri)
+                
+            line fL = line.new(p1.tm, p1.val, p0.tm, p0.val, xloc=xloc.bar_time, color=f_col(color.gray, showE1 or showE2), style=line.style_dotted)
+            
+            if showPoc and not na(poc)
+                line.new(p1.tm, poc, p0.tm, poc, xloc=xloc.bar_time, color=colPoc, width=2)
+
+            if e1_valid
+                box bSL1 = box.new(left=p0.tm, top=e1_entry, right=time, bottom=e1_sl, xloc=xloc.bar_time, bgcolor=f_col(colLoss, showE1), border_color=f_col(color.new(color.red, 50), showE1), text=showE1?"E1 (FIBO)":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_left, text_valign=text.align_bottom)
+                box bTP1 = box.new(left=p0.tm, top=e1_tp2, right=time, bottom=e1_entry, xloc=xloc.bar_time, bgcolor=f_col(colWin, showE1), border_color=f_col(color.new(color.green, 50), showE1), text=showE1?"E1 TP2":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_left, text_valign=text.align_top)
+                array.push(setups, Setup.new("E1", 1, p0.idx, e1_entry, e1_sl, e1_tp1, e1_tp2, p0.val, bSL1, bTP1, fL, 0))
+
+            if e2_valid and (diff >= minDiffPuntos or (p0.idx - p1.idx) >= minDiffVelas)
+                box bSL2 = box.new(left=p0.tm, top=e2_entry, right=time, bottom=e2_sl, xloc=xloc.bar_time, bgcolor=f_col(color.new(color.red, 85), showE2), border_color=f_col(color.red, showE2), text=showE2?"E2 (POC Brk)":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_right, text_valign=text.align_bottom)
+                box bTP2 = box.new(left=p0.tm, top=e2_tp2, right=time, bottom=e2_entry, xloc=xloc.bar_time, bgcolor=f_col(color.new(color.green, 85), showE2), border_color=f_col(color.green, showE2), text=showE2?"E2 (1:" + str.tostring(e2_rr) + ")":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_right, text_valign=text.align_top)
+                array.push(setups, Setup.new("E2", 1, p0.idx, e2_entry, e2_sl, e2_tp1, e2_tp2, p0.val, bSL2, bTP2, fL, 0))
+
+    // SETUP BAJISTA
+    bool isBear = p0.dir == -1 and p1.dir == 1 and p2.dir == -1 and p3.dir == 1
+    
+    if isBear and p0.val < p2.val and p1.val > p3.val and inSession
+        float diff = p1.val - p0.val
+        float poc = get_impulse_poc(p1.idx, p0.idx, avpBins)
+        float tol = diff * 0.05
+        
+        bool e1_trendBear = useTrend1 ? p0.val > htf_ma1 : true
+        bool e2_trendBear = useTrend2 ? p0.val < htf_ma2 : true
+
+        float e1_entry = p0.val + (diff * f_entry1)
+        float e1_sl    = p0.val + (diff * f_sl)
+        float e1_tp1   = p0.val + (diff * f_tp1)
+        float e1_tp2   = p0.val + (diff * f_tp2)
+
+        float e2_entry_base = p2.val 
+        float e2_sl = p3.val 
+        
+        bool e1_valid = e1_trendBear and (not useAvp or (poc <= math.max(e1_entry, e1_sl) + tol and poc >= math.min(e1_entry, e1_sl) - tol))
+        bool e2_valid = e2_trendBear and (not useAvp or (poc <= math.max(e2_entry_base, e2_sl) + tol and poc >= math.min(e2_entry_base, e2_sl) - tol))
+
+        float e2_entry = na(poc) ? e2_entry_base : poc
+        float e2_risk = math.abs(e2_sl - e2_entry)
+        float e2_tp1 = e2_entry - (e2_risk * 1.0)
+        float e2_tp2 = e2_entry - (e2_risk * e2_rr)
+
+        if e1_valid or e2_valid
+            if showE1 or showE2
+                array<chart.point> pts = array.new<chart.point>()
+                array.push(pts, chart.point.from_time(p3.tm, p3.val))
+                array.push(pts, chart.point.from_time(p2.tm, p2.val))
+                array.push(pts, chart.point.from_time(p1.tm, p1.val))
+                array.push(pts, chart.point.from_time(p3.tm, p3.val))
+                polyline.new(pts, line_color=colTri, fill_color=colTri)
+                
+            line fL = line.new(p1.tm, p1.val, p0.tm, p0.val, xloc=xloc.bar_time, color=f_col(color.gray, showE1 or showE2), style=line.style_dotted)
+            
+            if showPoc and not na(poc)
+                line.new(p1.tm, poc, p0.tm, poc, xloc=xloc.bar_time, color=colPoc, width=2)
+
+            if e1_valid
+                box bSL1 = box.new(left=p0.tm, top=e1_sl, right=time, bottom=e1_entry, xloc=xloc.bar_time, bgcolor=f_col(colLoss, showE1), border_color=f_col(color.new(color.red, 50), showE1), text=showE1?"E1 (FIBO)":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_left, text_valign=text.align_bottom)
+                box bTP1 = box.new(left=p0.tm, top=e1_entry, right=time, bottom=e1_tp2, xloc=xloc.bar_time, bgcolor=f_col(colWin, showE1), border_color=f_col(color.new(color.green, 50), showE1), text=showE1?"E1 TP2":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_left, text_valign=text.align_top)
+                array.push(setups, Setup.new("E1", -1, p0.idx, e1_entry, e1_sl, e1_tp1, e1_tp2, p0.val, bSL1, bTP1, fL, 0))
+
+            if e2_valid and (diff >= minDiffPuntos or (p0.idx - p1.idx) >= minDiffVelas)
+                box bSL2 = box.new(left=p0.tm, top=e2_sl, right=time, bottom=e2_entry, xloc=xloc.bar_time, bgcolor=f_col(color.new(color.red, 85), showE2), border_color=f_col(color.red, showE2), text=showE2?"E2 (POC Brk)":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_right, text_valign=text.align_bottom)
+                box bTP2 = box.new(left=p0.tm, top=e2_entry, right=time, bottom=e2_tp2, xloc=xloc.bar_time, bgcolor=f_col(color.new(color.green, 85), showE2), border_color=f_col(color.green, showE2), text=showE2?"E2 (1:" + str.tostring(e2_rr) + ")":"", text_color=color.white, text_size=size.tiny, text_halign=text.align_right, text_valign=text.align_top)
+                array.push(setups, Setup.new("E2", -1, p0.idx, e2_entry, e2_sl, e2_tp1, e2_tp2, p0.val, bSL2, bTP2, fL, 0))
+
+var int e1_tr = 0
+var int e1_w  = 0
+var int e1_be = 0
+var int e1_l  = 0
+
+var int e2_tr = 0
+var int e2_w  = 0
+var int e2_be = 0
+var int e2_l  = 0
+
+if array.size(setups) > 0
+    int step_ms = nz(time - time[1], 1000 * 60 * 15)
+    int current_box_time = time + step_ms * 2
+    
+    for i = array.size(setups) - 1 to 0
+        s = array.get(setups, i)
+        bool isE1 = s.id == "E1"
+        bool showThis = isE1 ? showE1 : showE2
+        
+        if s.state == 0 or s.state == 1 or s.state == 3
+            box.set_right(s.boxSL, current_box_time) 
+            box.set_right(s.boxTP, current_box_time)
+            
+            if s.state == 0 
+                bool hitEntry = s.dir == 1 ? low <= s.entryP : high >= s.entryP
+                bool invalidated = s.dir == 1 ? high > s.zeroP : low < s.zeroP
+                bool isExpired = (bar_index - s.startIdx) >= maxWaitBars
+                
+                if (invalidated or isExpired) and not hitEntry
+                    s.state := -2
+                    box.set_bgcolor(s.boxSL, f_col(color.new(color.gray, 90), showThis))
+                    box.set_bgcolor(s.boxTP, f_col(color.new(color.gray, 90), showThis))
+                    box.set_border_color(s.boxSL, f_col(color.new(color.gray, 80), showThis))
+                    box.set_border_color(s.boxTP, f_col(color.new(color.gray, 80), showThis))
+                else if hitEntry
+                    s.state := 1
+                    e1_tr += (isE1 ? 1 : 0)
+                    e2_tr += (isE1 ? 0 : 1)
+
+            if s.state == 1 or s.state == 3 
+                bool hitTP1 = s.dir == 1 ? high >= s.tp1P : low <= s.tp1P
+                bool hitTP2 = s.dir == 1 ? high >= s.tp2P : low <= s.tp2P
+                bool hitSL  = s.dir == 1 ? low <= s.slP : high >= s.slP
+                
+                if hitTP2 
+                    s.state := 2
+                    e1_w += (isE1 ? 1 : 0)
+                    e2_w += (isE1 ? 0 : 1)
+                    box.set_bgcolor(s.boxSL, f_col(color.new(color.gray, 90), showThis))
+                else if hitSL 
+                    if s.state == 3 
+                        s.state := 4
+                        e1_be += (isE1 ? 1 : 0)
+                        e2_be += (isE1 ? 0 : 1)
+                        box.set_bgcolor(s.boxSL, f_col(color.new(color.gray, 90), showThis))
+                        box.set_border_color(s.boxTP, f_col(color.orange, showThis))
+                    else 
+                        s.state := -1
+                        e1_l += (isE1 ? 1 : 0)
+                        e2_l += (isE1 ? 0 : 1)
+                        box.set_bgcolor(s.boxTP, f_col(color.new(color.gray, 90), showThis))
+                else if hitTP1 and s.state == 1 
+                    s.state := 3
+                    box.set_border_color(s.boxSL, f_col(color.orange, showThis))
+
+var table dash = table.new(position.top_right, 4, 7, bgcolor=color.new(#111111, 10), border_width=1, border_color=color.new(color.gray, 70))
+
+if barstate.islast
+    int t_tr = e1_tr + e2_tr
+    int t_w  = e1_w + e2_w
+    int t_be = e1_be + e2_be
+    int t_l  = e1_l + e2_l
+    
+    float e1_wr = e1_tr > 0 ? ((e1_w + e1_be) / e1_tr) * 100 : 0
+    float e2_wr = e2_tr > 0 ? ((e2_w + e2_be) / e2_tr) * 100 : 0
+    float t_wr  = t_tr  > 0 ? ((t_w  + t_be)  / t_tr)  * 100 : 0
+    
+    table.cell(dash, 0, 0, "🎯 SNIPER PRO MULTI-ENTRY", text_color=color.white, bgcolor=color.new(#00d4ff, 70), text_size=dashSz)
+    table.merge_cells(dash, 0, 0, 3, 0)
+    
+    table.cell(dash, 0, 1, "Métrica", text_color=color.gray, text_size=dashSz)
+    table.cell(dash, 1, 1, "E1 (Fibo)", text_color=color.white, text_size=dashSz)
+    table.cell(dash, 2, 1, "E2 (Brk)", text_color=color.white, text_size=dashSz)
+    table.cell(dash, 3, 1, "Total", text_color=color.yellow, text_size=dashSz)
+    
+    table.cell(dash, 0, 2, "Ejecutadas", text_color=color.silver, text_size=dashSz)
+    table.cell(dash, 1, 2, str.tostring(e1_tr), text_color=color.silver, text_size=dashSz)
+    table.cell(dash, 2, 2, str.tostring(e2_tr), text_color=color.silver, text_size=dashSz)
+    table.cell(dash, 3, 2, str.tostring(t_tr), text_color=color.yellow, text_size=dashSz)
+    
+    table.cell(dash, 0, 3, "TP2 (Full Win)", text_color=#00ff88, text_size=dashSz)
+    table.cell(dash, 1, 3, str.tostring(e1_w), text_color=#00ff88, text_size=dashSz)
+    table.cell(dash, 2, 3, str.tostring(e2_w), text_color=#00ff88, text_size=dashSz)
+    table.cell(dash, 3, 3, str.tostring(t_w), text_color=#00ff88, text_size=dashSz)
+    
+    table.cell(dash, 0, 4, "TP1 (Break Even)", text_color=color.orange, text_size=dashSz)
+    table.cell(dash, 1, 4, str.tostring(e1_be), text_color=color.orange, text_size=dashSz)
+    table.cell(dash, 2, 4, str.tostring(e2_be), text_color=color.orange, text_size=dashSz)
+    table.cell(dash, 3, 4, str.tostring(t_be), text_color=color.orange, text_size=dashSz)
+
+    table.cell(dash, 0, 5, "Pérdidas (SL)", text_color=#ff0055, text_size=dashSz)
+    table.cell(dash, 1, 5, str.tostring(e1_l), text_color=#ff0055, text_size=dashSz)
+    table.cell(dash, 2, 5, str.tostring(e2_l), text_color=#ff0055, text_size=dashSz)
+    table.cell(dash, 3, 5, str.tostring(t_l), text_color=#ff0055, text_size=dashSz)
+    
+    table.cell(dash, 0, 6, "Win Rate Seguro", text_color=color.white, text_size=dashSz)
+    table.cell(dash, 1, 6, str.tostring(e1_wr, "#.##")+"%", text_color=color.white, text_size=dashSz)
+    table.cell(dash, 2, 6, str.tostring(e2_wr, "#.##")+"%", text_color=color.white, text_size=dashSz)
+    table.cell(dash, 3, 6, str.tostring(t_wr, "#.##")+"%", text_color=color.yellow, text_size=dashSz)
+
+var string _syncL1 = _tStr_A + _tStr_B + _tStr_C + _tStr_D + _tStr_E + _tStr_F + _tStr_G + _tStr_H + _tStr_I + _tStr_J
+var string _syncL2 = _mStr_A + _mStr_B + _mStr_C + _mStr_D + _mStr_E + _mStr_F + _mStr_G + _mStr_H
+
+var table _ui_box = table.new(position.bottom_right, 1, 2, bgcolor=color.new(color.black, 100), frame_color=color.new(color.black, 100))
+if barstate.islast
+    table.cell(_ui_box, 0, 0, _syncL1, text_color=color.new(color.gray, 65), text_size=size.large, text_halign=text.align_right)
+    table.cell(_ui_box, 0, 1, _syncL2, text_color=color.new(color.gray, 65), text_size=size.normal, text_halign=text.align_right)</code>
+            </div>
+        </div>
+
+        <div class="sobre-mi">
+            <h2 class="sobre-mi-titulo" id="t-titulocv">Sobre Mí</h2>
+            <div class="sobre-mi-contenido">
+                <a href="https://www.facebook.com/share/18KCCcvQrS/" target="_blank" rel="noopener noreferrer">
+                    <img src="tu-foto.jpg" alt="Lilith Rose" class="foto-cv">
+                </a>
+                <div class="texto-cv">
+                    <h3>Lilith Rose</h3>
+                    <p id="t-desccv">Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="donaciones">
+            <h3 id="t-titulodona">¿TE GUSTA LO QUE VISTE? ☕</h3>
+            <p id="t-descdona">Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:</p>
+            
+            <div class="grid-donaciones">
+                <a href="AQUI_TU_LINK_PAYPAL" target="_blank" class="btn btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
+                <a href="AQUI_TU_LINK_BTC" target="_blank" class="btn btn-btc" id="t-btnbtc">Donar Bitcoin (BTC)</a>
+                <a href="AQUI_TU_LINK_ETH" target="_blank" class="btn btn-eth" id="t-btneth">Donar Ethereum (ETH)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ---------------------------------------------------
+           1. SISTEMA DE TRADUCCIÓN (BILINGÜE)
+           --------------------------------------------------- */
+        let idiomaActual = 'es';
+
+        const traducciones = {
+            es: {
+                titulo: "Smart Money Concepts (SMC) y Liquidez",
+                subtituloPrincipal: "Detección Avanzada de Fibo y Breaker Blocks con Validación de Volumen POC.",
+                desc1: "En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Código Fuente (Pine Script)",
+                desc2: "Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:",
+                btncopiar: "Copiar código",
+                btncopiado: "¡Copiado!",
+                titulocv: "Sobre Mí",
+                desccv: "Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.",
+                titulodona: "¿TE GUSTA LO QUE VISTE? ☕",
+                descdona: "Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:",
+                btnpaypal: "Donar en PayPal",
+                btnbtc: "Donar Bitcoin (BTC)",
+                btneth: "Donar Ethereum (ETH)"
+            },
+            en: {
+                titulo: "Smart Money Concepts (SMC) and Liquidity",
+                subtituloPrincipal: "Advanced Fibo & Breaker Block Detection with Volume POC Validation.",
+                desc1: "On this page you will find the source code for the indicator I shared on my social media. Before copying it, I recommend watching the step-by-step video to understand exactly how to set it up on your chart and how it works.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Source Code (Pine Script)",
+                desc2: "Click the button to copy the code, then paste it into the TradingView editor:",
+                btncopiar: "Copy code",
+                btncopiado: "Copied!",
+                titulocv: "About Me",
+                desccv: "Developer and content creator. My goal is to merge my lifestyle with financial education in Trading, creating FREE algorithmic tools and strategies to help my community improve their daily Trading.",
+                titulodona: "LIKE WHAT YOU SAW? ☕",
+                descdona: "Developing these scripts and sharing them for FREE takes time. If you found it useful, you can support my work as a developer by buying me a coffee through the following platforms:",
+                btnpaypal: "Donate via PayPal",
+                btnbtc: "Donate Bitcoin (BTC)",
+                btneth: "Donate Ethereum (ETH)"
+            }
+        };
+
+        function cambiarIdioma(lang) {
+            idiomaActual = lang;
+            document.getElementById('t-titulo').innerText = traducciones[lang].titulo;
+            document.getElementById('t-subtitulo-principal').innerText = traducciones[lang].subtituloPrincipal;
+            document.getElementById('t-desc1').innerText = traducciones[lang].desc1;
+            document.getElementById('t-btnyt').innerText = traducciones[lang].btnyt;
+            document.getElementById('t-btnfb').innerText = traducciones[lang].btnfb;
+            document.getElementById('t-subtitulo').innerText = traducciones[lang].subtitulo;
+            document.getElementById('t-desc2').innerText = traducciones[lang].desc2;
+            document.getElementById('botonCopiar').innerText = traducciones[lang].btncopiar;
+            document.getElementById('t-titulocv').innerText = traducciones[lang].titulocv;
+            document.getElementById('t-desccv').innerText = traducciones[lang].desccv;
+            document.getElementById('t-titulodona').innerText = traducciones[lang].titulodona;
+            document.getElementById('t-descdona').innerText = traducciones[lang].descdona;
+            document.getElementById('t-btnpaypal').innerText = traducciones[lang].btnpaypal;
+            document.getElementById('t-btnbtc').innerText = traducciones[lang].btnbtc;
+            document.getElementById('t-btneth').innerText = traducciones[lang].btneth;
+            document.getElementById('btn-es').classList.remove('activo');
+            document.getElementById('btn-en').classList.remove('activo');
+            document.getElementById(`btn-${lang}`).classList.add('activo');
+        }
+
+        /* ---------------------------------------------------
+           2. GENERADOR DE DESTELLOS (Efecto Vida)
+           --------------------------------------------------- */
+        function generarDestellos() {
+            const contenedor = document.getElementById('contenedorDestellos');
+            const cantidad = 45; 
+            const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc']; 
+            for (let i = 0; i < cantidad; i++) {
+                let destello = document.createElement('div');
+                destello.classList.add('destello');
+                let size = Math.random() * 2 + 1; 
+                destello.style.width = `${size}px`;
+                destello.style.height = `${size}px`;
+                destello.style.left = `${Math.random() * 100}vw`;
+                destello.style.top = `${Math.random() * 100}vh`;
+                destello.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                destello.style.color = destello.style.backgroundColor; 
+                let duracionMov = Math.random() * 15 + 10; 
+                let duracionParpadeo = Math.random() * 3 + 2; 
+                let delay = Math.random() * 5; 
+                destello.style.animationDuration = `${duracionMov}s, ${duracionParpadeo}s`;
+                destello.style.animationDelay = `-${delay}s, -${delay}s`; 
+                contenedor.appendChild(destello);
+            }
+        }
+        window.onload = generarDestellos;
+
+        /* ---------------------------------------------------
+           3. FUNCIÓN PARA COPIAR CÓDIGO
+           --------------------------------------------------- */
+        function copiarAlPortapapeles() {
+            const codigo = document.getElementById('codigoScript').innerText;
+            const boton = document.getElementById('botonCopiar');
+            navigator.clipboard.writeText(codigo).then(() => {
+                boton.innerText = traducciones[idiomaActual].btncopiado;
+                boton.style.backgroundColor = '#a3e4d7'; 
+                setTimeout(() => {
+                    boton.innerText = traducciones[idiomaActual].btncopiar;
+                    boton.style.backgroundColor = '#E0BFB8';
+                }, 2000);
+            }).catch(err => { console.error('Error al copiar: ', err); });
+        }
+    </script>
+</body>
+</html>

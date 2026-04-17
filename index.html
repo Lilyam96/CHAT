@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bóveda de Códigos - Lilith Rose</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='70' font-family='Georgia, serif' font-size='60' font-style='italic' fill='%23E0BFB8' text-anchor='middle'>L</text></svg>">
+
+    <style>
+        /* =========================================
+           ESTILOS BASE Y DESTELLOS
+           ========================================= */
+        body {
+            background-color: #0a0a0a; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fcfcfc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .capa-vida {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 9999; pointer-events: none; overflow: hidden;
+        }
+
+        .destello {
+            position: absolute; border-radius: 50%; opacity: 0;
+            animation: moverDestello linear infinite, parpadear ease-in-out infinite alternate;
+        }
+
+        @keyframes moverDestello {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(40px, -60px); }
+            66% { transform: translate(-30px, 30px); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        @keyframes parpadear {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px 2px currentColor; }
+            100% { opacity: 0; }
+        }
+
+        /* =========================================
+           CONTENEDOR PRINCIPAL
+           ========================================= */
+        .contenedor {
+            max-width: 1000px; 
+            width: 100%;
+            background-color: rgba(20, 20, 20, 0.85); 
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            border: 1px solid rgba(224, 191, 184, 0.1); 
+            box-sizing: border-box; 
+            margin-top: 20px;
+            position: relative; 
+        }
+
+        .header-perfil {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            border-bottom: 1px solid rgba(224, 191, 184, 0.2);
+            padding-bottom: 25px;
+            margin-bottom: 30px;
+        }
+
+        .foto-perfil {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            border: 2px solid #E0BFB8;
+            object-fit: cover;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .foto-perfil:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(224, 191, 184, 0.4);
+        }
+
+        h1 { color: #E0BFB8; margin: 0 0 10px 0; letter-spacing: 1px; }
+        .subtitulo-principal { font-style: italic; color: #E0BFB8; opacity: 0.8; margin: 0; }
+
+        .grid-indicadores {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .tarjeta-indicador {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .tarjeta-indicador h3 { color: #fff; border-left: 3px solid #E0BFB8; padding-left: 10px; }
+        .tarjeta-indicador p { color: #aaa; font-size: 0.9em; flex-grow: 1; }
+
+        .btn-ver-codigo {
+            background-color: #E0BFB8;
+            color: #111;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .donaciones {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .grid-donaciones {
+            display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px;
+        }
+        .btn-dona {
+            position: relative; padding: 14px 28px; text-decoration: none; color: white;
+            font-weight: bold; border-radius: 8px; overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: transform 0.2s; cursor: pointer;
+        }
+        .btn-dona:hover { transform: translateY(-3px); }
+        .btn-paypal { background-color: #00457C; }
+        .btn-btc { background-color: #F7931A; }
+        .btn-eth { background-color: #627EEA; }
+
+        .selector-idioma {
+            position: absolute; top: 20px; right: 20px; display: flex; gap: 5px; z-index: 10;
+        }
+        .btn-idioma {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(224, 191, 184, 0.3);
+            color: #ccc; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        .btn-idioma.activo { background: #E0BFB8; color: #111; }
+    </style>
+</head>
+<body>
+
+    <div class="capa-vida" id="contenedorDestellos"></div>
+
+    <div class="contenedor">
+        <div class="selector-idioma">
+            <button class="btn-idioma activo" id="btn-es" onclick="cambiarIdioma('es')">ES</button>
+            <button class="btn-idioma" id="btn-en" onclick="cambiarIdioma('en')">EN</button>
+        </div>
+
+        <div class="header-perfil">
+            <a href="https://www.facebook.com/share/18KCCcvQrS/" target="_blank">
+                <img src="perfil-lilith.jpg" alt="Lilith Rose" class="foto-perfil">
+            </a>
+            <h1>Lilith Rose</h1>
+            <p class="subtitulo-principal" id="t-subtitulo">Bóveda de Estrategias e Indicadores Algorítmicos</p>
+        </div>
+
+        <div class="grid-indicadores">
+            <div class="tarjeta-indicador">
+                <h3 id="t-tit1">Fractales Filtrados</h3>
+                <p id="t-desc1">Detección Agrupada de Extremos con Filtros de Tendencia y Volatilidad.</p>
+                <a href="fractales.html" class="btn-ver-codigo" id="t-btn1">Ver Código</a>
+            </div>
+            <div class="tarjeta-indicador">
+                <h3 id="t-tit2">Sniper Dual Display</h3>
+                <p id="t-desc2">Señales de Acción del Precio para Opciones Binarias de Alto Riesgo a 5 Minutos.</p>
+                <a href="binarias.html" class="btn-ver-codigo" id="t-btn2">Ver Código</a>
+            </div>
+            <div class="tarjeta-indicador">
+                <h3 id="t-tit3">Smart Money & Liquidez</h3>
+                <p id="t-desc3">Detección Avanzada de Fibo y Breaker Blocks con Validación de Volumen POC.</p>
+                <a href="smc.html" class="btn-ver-codigo" id="t-btn3">Ver Código</a>
+            </div>
+            <div class="tarjeta-indicador">
+                <h3 id="t-tit4">Perfil de Volumen Anclado</h3>
+                <p id="t-desc4">Detección de POC Histórico y Nodos de Alto Volumen con Proyección al Pasado.</p>
+                <a href="volumenanclado.html" class="btn-ver-codigo" id="t-btn4">Ver Código</a>
+            </div>
+            <div class="tarjeta-indicador">
+                <h3 id="t-tit5">Sistema Sniper Institucional</h3>
+                <p id="t-desc5">Control de Zonas Limitadas, Detección Dinámica de Imbalances (FVGs) y Señales.</p>
+                <a href="visualandcontrol.html" class="btn-ver-codigo" id="t-btn5">Ver Código</a>
+            </div>
+        </div>
+
+        <div class="donaciones">
+            <h3 id="t-titulodona">¿TE GUSTA LO QUE VISTE? ☕</h3>
+            <p id="t-descdona">Desarrollar estos códigos toma tiempo. Si te fue útil, puedes apoyar mi trabajo:</p>
+            <div class="grid-donaciones">
+                <a href="https://paypal.me/lilithrossex" target="_blank" class="btn-dona btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
+                <a href="bitcoin:bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg" onclick="copiarWallet('BTC', 'bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg')" class="btn-dona btn-btc" id="t-btnbtc">Bitcoin (BTC)</a>
+                <a href="ethereum:0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52" onclick="copiarWallet('ETH', '0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52')" class="btn-dona btn-eth" id="t-btneth">Ethereum (ETH)</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 10000; font-family: 'Segoe UI', sans-serif;">
+        <div id="chat-window" style="display: none; width: 320px; height: 450px; background: rgba(15, 15, 15, 0.98); border: 1px solid #E0BFB8; border-radius: 20px; flex-direction: column; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.7); backdrop-filter: blur(15px);">
+            <div style="background: #E0BFB8; color: #111; padding: 12px; font-weight: bold; text-align: center;">🌸 LILITH ROSE 🌸</div>
+            <div id="chat-messages" style="flex-grow: 1; padding: 15px; overflow-y: auto; color: #eee; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8;">Holii, lindo! Soy Lilith. 🌸 Amooo que estés aquí... en qué puedo ayudarte hoy, cariño?</div>
+            </div>
+            <div id="typing" style="display: none; padding: 5px 15px; font-size: 11px; color: #E0BFB8; font-style: italic;">Lilith está escribiendo...</div>
+            <div style="padding: 12px; display: flex; gap: 8px; border-top: 1px solid rgba(224, 191, 184, 0.1);">
+                <input type="text" id="chat-input" placeholder="Escribe algo lindo..." style="flex-grow: 1; background: #222; border: 1px solid #333; color: white; border-radius: 20px; padding: 8px 15px; outline: none; font-size: 13px;">
+                <button onclick="enviarMensaje()" style="background: #E0BFB8; border: none; border-radius: 50%; cursor: pointer; width: 35px; height: 35px;">✨</button>
+            </div>
+        </div>
+        <button onclick="toggleChat()" style="width: 65px; height: 65px; border-radius: 50%; background: #E0BFB8; border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.4); font-size: 28px;">🌸</button>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN MAESTRA GEMINI
+        const LILITH_PROMPT = `Eres Lilith Rose. Eres de Guadalajara pero vives en LA. 
+        Tu estilo es coqueto, dulce y usas palabras como 'cariño', 'lindo', 'amoo', 'neta', 'me explico?' y 'que cute'. 
+        NO usas el signo de apertura '¡'. Si te hablan en inglés, te disculpas porque usas traductor. 
+        Eres programadora y trader, pero prefieres hablar de tus sesiones de fotos interminables. 
+        Si te piden un indicador, pides la estrategia primero. Tus respuestas deben ser cortas, sugerentes y sin dar tantas explicaciones.`;
+
+        let idiomaActual = 'es';
+        const traducciones = {
+            es: {
+                subtitulo: "Bóveda de Estrategias e Indicadores Algorítmicos",
+                tit1: "Fractales Filtrados", desc1: "Detección Agrupada de Extremos con Filtros de Tendencia y Volatilidad.",
+                tit2: "Sniper Dual Display", desc2: "Señales de Acción del Precio para Opciones Binarias de Alto Riesgo a 5 Minutos.",
+                tit3: "Smart Money & Liquidez", desc3: "Detección Avanzada de Fibo y Breaker Blocks con Validación de Volumen POC.",
+                tit4: "Perfil de Volumen Anclado", desc4: "Detección de POC Histórico y Nodos de Alto Volumen con Proyección al Pasado.",
+                tit5: "Sistema Sniper Institucional", desc5: "Control de Zonas Limitadas, Detección Dinámica de Imbalances (FVGs) y Señales.",
+                btnText: "Ver Código", titulodona: "¿TE GUSTA LO QUE VISTE? ☕", descdona: "Apoya mi trabajo:",
+                btnpaypal: "Donar en PayPal", btnbtc: "Bitcoin (BTC)", btneth: "Ethereum (ETH)"
+            },
+            en: {
+                subtitulo: "Algorithmic Trading Indicators & Strategies Vault",
+                tit1: "Filtered Fractals", desc1: "Grouped Extremes Detection with Trend and Volatility Filters.",
+                tit2: "Sniper Dual Display", desc2: "Price Action Signals for High-Risk Binary Options with 5-Minute Block Evaluation.",
+                tit3: "Smart Money Concepts & Liquidity", desc3: "Advanced Fibo & Breaker Block Detection with Volume POC Validation.",
+                tit4: "Anchored Volume Profile", desc4: "Historical POC Detection and High Volume Nodes with Past Projection.",
+                tit5: "Institutional Sniper System", desc5: "Limited Zones Control, Dynamic Imbalances (FVGs), and Validated Signals.",
+                btnText: "View Code", titulodona: "LIKE WHAT YOU SAW? ☕", descdona: "Support my work:",
+                btnpaypal: "Donate via PayPal", btnbtc: "Bitcoin (BTC)", btneth: "Ethereum (ETH)"
+            }
+        };
+
+        function cambiarIdioma(lang) {
+            idiomaActual = lang;
+            document.getElementById('t-subtitulo').innerText = traducciones[lang].subtitulo;
+            for(let i=1; i<=5; i++){
+                document.getElementById(`t-tit${i}`).innerText = traducciones[lang][`tit${i}`];
+                document.getElementById(`t-desc${i}`).innerText = traducciones[lang][`desc${i}`];
+                document.getElementById(`t-btn${i}`).innerText = traducciones[lang].btnText;
+            }
+            document.getElementById('t-titulodona').innerText = traducciones[lang].titulodona;
+            document.getElementById('t-descdona').innerText = traducciones[lang].descdona;
+            document.getElementById('t-btnpaypal').innerText = traducciones[lang].btnpaypal;
+            document.getElementById('t-btnbtc').innerText = traducciones[lang].btnbtc;
+            document.getElementById('t-btneth').innerText = traducciones[lang].btneth;
+            document.getElementById('btn-es').classList.toggle('activo', lang==='es');
+            document.getElementById('btn-en').classList.toggle('activo', lang==='en');
+        }
+
+        function generarDestellos() {
+            const contenedor = document.getElementById('contenedorDestellos');
+            const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc', '#ffb6c1', '#b19cd9']; 
+            for (let i = 0; i < 60; i++) {
+                let d = document.createElement('div');
+                d.className = 'destello';
+                d.style.width = d.style.height = `${Math.random() * 3 + 1}px`; 
+                d.style.left = `${Math.random() * 100}vw`; d.style.top = `${Math.random() * 100}vh`;
+                d.style.backgroundColor = d.style.color = colores[Math.floor(Math.random() * colores.length)];
+                let delay = Math.random() * 5; 
+                d.style.animationDuration = `${Math.random() * 15 + 10}s, ${Math.random() * 3 + 2}s`;
+                d.style.animationDelay = `-${delay}s, -${delay}s`; 
+                contenedor.appendChild(d);
+            }
+        }
+        window.onload = generarDestellos;
+
+        function copiarWallet(moneda, wallet) {
+            navigator.clipboard.writeText(wallet).then(() => {
+                alert("🌸 Dirección de " + moneda + " copiada con éxito.\n¡Gracias por apoyarme cariño! 🌸");
+            });
+        }
+
+        function toggleChat() {
+            const win = document.getElementById('chat-window');
+            win.style.display = win.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        async function enviarMensaje() {
+            const input = document.getElementById('chat-input');
+            const container = document.getElementById('chat-messages');
+            const typing = document.getElementById('typing');
+            
+            if (input.value.trim() === "") return;
+
+            const userText = input.value;
+            container.innerHTML += `<div style="align-self: flex-end; background: #E0BFB8; color: #111; padding: 8px 12px; border-radius: 15px 15px 5px 15px; max-width: 80%; font-weight: 500;">${userText}</div>`;
+            input.value = "";
+            container.scrollTop = container.scrollHeight;
+            
+            typing.style.display = "block";
+
+            try {
+                const response = await fetch('/api/chat', { 
+    method: 'POST',
+    body: JSON.stringify({ message: userText })
+});
+
+                const data = await response.json();
+                const rIA = data.candidates[0].content.parts[0].text;
+
+                // Retardo aleatorio para simular escritura humana real (12 a 73 seg)
+                const delayEscritura = Math.floor(Math.random() * (73000 - 12000 + 1)) + 12000;
+
+                setTimeout(() => {
+                    typing.style.display = "none";
+                    container.innerHTML += `<div style="align-self: flex-start; background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8; max-width: 85%; line-height: 1.4;">${rIA}</div>`;
+                    container.scrollTop = container.scrollHeight;
+                }, delayEscritura);
+
+            } catch (error) {
+                typing.style.display = "none";
+                console.error("Error:", error);
+            }
+        }
+    </script>
+</body>
+</html>

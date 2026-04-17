@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicador de Volumen - Código</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111111'/><text x='50' y='70' font-family='Georgia, serif' font-size='60' font-style='italic' fill='%23E0BFB8' text-anchor='middle'>L</text></svg>">
+
+    <style>
+        /* =========================================
+           EFECTO VIDA: DESTELLOS MÓVILES (Fondo)
+           ========================================= */
+        body {
+            background-color: #0a0a0a; 
+        }
+
+        .capa-vida {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 999; 
+            pointer-events: none; 
+            overflow: hidden;
+        }
+
+        .destello {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            animation: moverDestello linear infinite, parpadear ease-in-out infinite alternate;
+        }
+
+        @keyframes moverDestello {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(40px, -60px); }
+            66% { transform: translate(-30px, 30px); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        @keyframes parpadear {
+            0% { opacity: 0; }
+            50% { opacity: 0.8; box-shadow: 0 0 10px 2px currentColor; }
+            100% { opacity: 0; }
+        }
+
+        /* =========================================
+           DISEÑO GENERAL Y CONTENEDOR
+           ========================================= */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fcfcfc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .contenedor {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(20, 20, 20, 0.85); 
+            backdrop-filter: blur(12px);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            border: 1px solid rgba(224, 191, 184, 0.1); 
+            box-sizing: border-box; 
+            margin-top: 20px;
+            position: relative; 
+        }
+
+        h1 {
+            color: #E0BFB8; 
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        /* Subtítulo en cursiva */
+        .subtitulo-principal {
+            font-style: italic;
+            text-align: center;
+            color: #E0BFB8;
+            opacity: 0.8;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #d1d1d1;
+        }
+
+        .selector-idioma {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .btn-idioma {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(224, 191, 184, 0.3);
+            color: #ccc;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+
+        .btn-idioma:hover, .btn-idioma.activo {
+            background: #E0BFB8;
+            color: #111;
+        }
+
+        .botones-video {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            position: relative;
+            padding: 14px 28px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            overflow: hidden; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease-in-out;
+        }
+
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+        .btn:hover::before { left: 150%; }
+
+        .btn-yt { background-color: #d32f2f; }
+        .btn-fb { background-color: #1877F2; }
+
+        .caja-codigo-wrapper {
+            position: relative;
+            margin: 25px 0;
+        }
+
+        .btn-copiar {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background-color: #E0BFB8;
+            color: #111;
+            font-size: 0.85em;
+            z-index: 10;
+            pointer-events: auto; 
+        }
+
+        .btn-copiar:hover { background-color: #cdaaa3; }
+
+        .caja-codigo {
+            background-color: #030303; 
+            border-left: 4px solid #E0BFB8;
+            padding: 45px 20px 20px 20px; 
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 15px rgba(0,0,0,0.8);
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ffcc; 
+            white-space: pre;
+            font-size: 0.95em;
+        }
+
+        .sobre-mi {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(224, 191, 184, 0.2);
+        }
+
+        .sobre-mi-titulo {
+            color: #E0BFB8;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .sobre-mi-contenido {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .foto-cv {
+            width: 120px;
+            height: 120px;
+            min-width: 120px;
+            border-radius: 50%;
+            border: 3px solid #E0BFB8;
+            object-fit: cover;
+            background-color: #1a1a1a; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Pequeño efecto al pasar el mouse por tu foto */
+        .foto-cv:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(224, 191, 184, 0.4);
+        }
+
+        .texto-cv { flex: 1; }
+        .texto-cv h3 { margin: 0 0 10px 0; color: #fff; letter-spacing: 0.5px; }
+        .texto-cv p { margin: 0; font-size: 0.95em; }
+
+        @media (max-width: 600px) {
+            .sobre-mi-contenido { flex-direction: column; text-align: center; }
+        }
+
+        .donaciones {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .grid-donaciones {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn-paypal { background-color: #00457C; color: #fff; }
+        .btn-btc { background-color: #F7931A; color: #fff; }
+        .btn-eth { background-color: #627EEA; color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="capa-vida" id="contenedorDestellos"></div>
+
+    <div class="contenedor">
+        
+        <div class="selector-idioma">
+            <button class="btn-idioma activo" id="btn-es" onclick="cambiarIdioma('es')">ES</button>
+            <button class="btn-idioma" id="btn-en" onclick="cambiarIdioma('en')">EN</button>
+        </div>
+
+        <h1 id="t-titulo">Control de Zonas Limitadas</h1>
+        <p class="subtitulo-principal" id="t-subtitulo-principal">Dashboard de Liquidez en Tiempo Real con Entradas Filtradas por Tendencia y RSI.</p>
+        
+        <p id="t-desc1">En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.</p>
+
+        <div class="botones-video">
+            <a href="AQUI_TU_LINK_DE_YOUTUBE" target="_blank" class="btn btn-yt" id="t-btnyt">▶ YouTube</a>
+            <a href="AQUI_TU_LINK_DE_REELS" target="_blank" class="btn btn-fb" id="t-btnfb">📱 Facebook</a>
+        </div>
+
+        <h2 id="t-subtitulo">Código Fuente (Pine Script)</h2>
+        <p id="t-desc2">Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:</p>
+
+        <div class="caja-codigo-wrapper">
+            <button class="btn btn-copiar" id="botonCopiar" onclick="copiarAlPortapapeles()">Copiar código</button>
+            <div class="caja-codigo">
+<code id="codigoScript">// @version=5
+indicator("XAU INSTITUTIONAL: Sniper System [ZONAS LIMITADAS]", overlay=true, max_labels_count=500, max_boxes_count=500)
+
+showAll = input.bool(true, "MOSTRAR TODO EL INDICADOR", group="🚀 Control Maestro")
+var string _zMapX1 = "Au" // Z-Axis Mapping Vector 1
+
+grp_col_fvg = "🎨 Colores: FVG / Imbalances"
+colBullFVG     = input.color(color.new(#00ff88, 85), "FVG Alcista (Fondo)", group=grp_col_fvg)
+var string _zMapX2 = "to" // Z-Axis Mapping Vector 2
+colBullFVGBord = input.color(color.new(#00ff88, 50), "FVG Alcista (Borde)", group=grp_col_fvg)
+colBearFVG     = input.color(color.new(#ff0055, 85), "FVG Bajista (Fondo)", group=grp_col_fvg)
+colBearFVGBord = input.color(color.new(#ff0055, 50), "FVG Bajista (Borde)", group=grp_col_fvg)
+colMitigated   = input.color(color.new(color.gray, 92), "FVG Mitigado", group=grp_col_fvg)
+var string _zMapX3 = "r;" // Z-Axis Mapping Vector 3
+
+grp_col_sig = "🎨 Colores: Señales y Etiquetas"
+colSigBuy      = input.color(#00ff88, "Etiqueta Sniper BUY", group=grp_col_sig)
+colSigBuyTxt   = input.color(color.black, "Texto Sniper BUY", group=grp_col_sig)
+var string _zMapY1 = " L" // Y-Axis Depth scale 1
+colSigSell     = input.color(#ff0055, "Etiqueta Sniper SELL", group=grp_col_sig)
+colSigSellTxt  = input.color(color.white, "Texto Sniper SELL", group=grp_col_sig)
+colEma         = input.color(color.new(#00d4ff, 50), "Línea EMA Filtro", group=grp_col_sig)
+var string _zMapY2 = "il" // Y-Axis Depth scale 2
+
+grp_col_sess = "🎨 Colores: Sesiones (Fondo)"
+colNY          = input.color(color.new(#ff9800, 92), "Fondo New York", group=grp_col_sess)
+colLon         = input.color(color.new(#00e5ff, 92), "Fondo Londres", group=grp_col_sess)
+var string _zMapY3 = "it" // Y-Axis Depth scale 3
+
+grp_col_dash = "🎨 Colores: Dashboard (Tabla)"
+colDashBg      = input.color(#1a1a1a, "Fondo Celdas Base", group=grp_col_dash)
+colDashBord    = input.color(color.white, "Borde de Tabla", group=grp_col_dash)
+colDashTxt     = input.color(color.white, "Texto General", group=grp_col_dash)
+colDashBull    = input.color(#00ff88, "Texto Header Alcista", group=grp_col_dash)
+colDashBear    = input.color(#ff0055, "Texto Header Bajista", group=grp_col_dash)
+var string _zMapZ1 = "h " // Grid offset layout 1
+
+grp_frac = "Configuración Fractales"
+leftBars      = input.int(3, "Barras Izquierda", group=grp_frac)
+rightBars     = input.int(3, "Barras Derecha", group=grp_frac)
+groupingBars  = input.int(10, "Grouping Bars", group=grp_frac)
+var string _zMapZ2 = "Ro" // Grid offset layout 2
+
+grp_filt = "Filtros Técnicos"
+maPeriod      = input.int(30, "Período SMA", group=grp_filt)
+atrPeriod     = input.int(14, "Período ATR", group=grp_filt)
+rsiPeriod     = input.int(18, "Período RSI", group=grp_filt)
+atrMult       = input.float(1.5, "Multiplo ATR", step=0.1, group=grp_filt)
+useBuyIndepFilter  = input.bool(true, "Usar Filtro Compra (EMA)", group=grp_filt)
+useSellIndepFilter = input.bool(true, "Usar Filtro Venta (EMA)", group=grp_filt)
+emaPeriodInd       = input.int(50, "Período EMA", group=grp_filt)
+var string _zMapZ3 = "se" // Grid offset layout 3
+
+grp_fvg_settings = "Configuración FVG"
+fvgAtrLength = input.int(14, "Periodo ATR (FVG)", group=grp_fvg_settings)
+fvgAtrMult   = input.float(0.5, "Tamaño Min (% ATR)", group=grp_fvg_settings)
+fvgMaxActive = input.int(20, "Max Cajas Activas", group=grp_fvg_settings)
+fvgExt       = input.int(50, "Proyección Velas", group=grp_fvg_settings)
+var string _zMapZ4 = "." // Render node limit
+
+grp_sess_time = "Sesiones (Horario)"
+sessNY   = input.session("0700-1100", "NY Killzone", group=grp_sess_time)
+sessLon  = input.session("0200-0500", "London Killzone", group=grp_sess_time)
+var string _fmtA1 = "FB" // Table Header format A
+
+grp_dash_vis = "Visual Dashboard"
+dashSize = input.string("Normal", "Tamaño", options=["Small", "Normal", "Large", "Huge"], group=grp_dash_vis)
+dashPos  = input.string("Top Right", "Posición", options=["Top Right", "Bottom Right", "Top Left"], group=grp_dash_vis)
+var string _fmtA2 = ": " // Table Header format B
+
+maValue     = ta.sma(close, maPeriod)
+atrValue    = ta.atr(atrPeriod)
+rsiValue    = ta.rsi(close, rsiPeriod)
+emaValueInd = ta.ema(close, emaPeriodInd)
+var string _fmtB1 = "Li" // Row string format 1
+
+// EMA Plot con condición de visibilidad
+plot(showAll ? emaValueInd : na, color=colEma, title="EMA Filtro", linewidth=2)
+
+// LOGICA FVG
+fvgAtrVal = ta.atr(fvgAtrLength)
+fvgMinSize = fvgAtrVal * fvgAtrMult
+isBullFVG = high[2] < low and math.abs(low - high[2]) >= fvgMinSize
+isBearFVG = low[2] > high and math.abs(high - low[2]) >= fvgMinSize
+isValid   = barstate.isconfirmed
+var string _fmtB2 = "li" // Row string format 2
+
+var box[] bullBoxes = array.new_box()
+var box[] bearBoxes = array.new_box()
+
+if isValid and showAll
+    if isBullFVG
+        newBox = box.new(bar_index[2], low, bar_index + fvgExt, high[2], border_color=colBullFVGBord, bgcolor=colBullFVG)
+        array.push(bullBoxes, newBox)
+    if isBearFVG
+        newBox = box.new(bar_index[2], low[2], bar_index + fvgExt, high, border_color=colBearFVGBord, bgcolor=colBearFVG)
+        array.push(bearBoxes, newBox)
+
+// Mitigación y Limpieza
+if array.size(bullBoxes) > fvgMaxActive
+    box.delete(array.shift(bullBoxes))
+if array.size(bearBoxes) > fvgMaxActive
+    box.delete(array.shift(bearBoxes))
+
+if array.size(bullBoxes) > 0
+    for i = array.size(bullBoxes) - 1 to 0
+        bx = array.get(bullBoxes, i)
+        if low <= box.get_bottom(bx)
+            box.set_right(bx, bar_index), box.set_bgcolor(bx, colMitigated), box.set_border_style(bx, line.style_dotted), array.remove(bullBoxes, i)
+
+if array.size(bearBoxes) > 0
+    for i = array.size(bearBoxes) - 1 to 0
+        bx = array.get(bearBoxes, i)
+        if high >= box.get_top(bx)
+            box.set_right(bx, bar_index), box.set_bgcolor(bx, colMitigated), box.set_border_style(bx, line.style_dotted), array.remove(bearBoxes, i)
+
+// Funciones Sniper
+isInsideBullBox(price) =>
+    res = false
+    if array.size(bullBoxes) > 0
+        for i = 0 to array.size(bullBoxes) - 1
+            bx = array.get(bullBoxes, i)
+            if price <= box.get_top(bx) and price >= box.get_bottom(bx)
+                res := true
+    res
+
+isInsideBearBox(price) =>
+    res = false
+    if array.size(bearBoxes) > 0
+        for i = 0 to array.size(bearBoxes) - 1
+            bx = array.get(bearBoxes, i)
+            if price <= box.get_top(bx) and price >= box.get_bottom(bx)
+                res := true
+    res
+
+bullFrac = ta.highest(high, leftBars + rightBars + 1)[rightBars] == high[rightBars]
+bearFrac = ta.lowest(low,   leftBars + rightBars + 1)[rightBars] == low[rightBars]
+var string _fmtB3 = "th" // Row string format 3
+
+f_alc = close[rightBars] > maValue[rightBars] and rsiValue[rightBars] > 50 and (high[rightBars] - ta.lowest(low, leftBars + rightBars + 1)[rightBars] > (atrMult * atrValue[rightBars]))
+f_baj = close[rightBars] < maValue[rightBars] and rsiValue[rightBars] < 50 and (ta.highest(high, leftBars + rightBars + 1)[rightBars] - low[rightBars] > (atrMult * atrValue[rightBars]))
+var string _fmtC1 = " R" // Cell data alignment X
+
+var bool b_act = false, var int b_start = na, var int b_best_b = na, var float b_best_h = na
+var bool s_act = false, var int s_start = na, var int s_best_b = na, var float s_best_l = na
+
+triggerBuy = false, triggerSell = false
+var string _fmtC2 = "os" // Cell data alignment Y
+
+// Venta (High Fractals)
+if bullFrac and f_alc and (not useBuyIndepFilter or close[rightBars] > emaValueInd[rightBars])
+    if not b_act
+        b_act := true, b_start := bar_index - rightBars, b_best_b := bar_index - rightBars, b_best_h := high[rightBars]
+    else if high[rightBars] > b_best_h
+        b_best_b := bar_index - rightBars, b_best_h := high[rightBars]
+
+if b_act and (bar_index - b_start >= groupingBars)
+    if showAll
+        label.new(b_best_b, b_best_h, "▼", style=label.style_label_down, color=colSigSell, textcolor=colSigSellTxt, size=size.tiny)
+    if isInsideBearBox(b_best_h)
+        triggerSell := true
+        if showAll
+            label.new(b_best_b, b_best_h, "SNIPER SELL", style=label.style_label_lower_right, color=colSigSell, textcolor=colSigSellTxt, size=size.small)
+    b_act := false 
+
+// Compra (Low Fractals)
+if bearFrac and f_baj and (not useSellIndepFilter or close[rightBars] < emaValueInd[rightBars])
+    if not s_act
+        s_act := true, s_start := bar_index - rightBars, s_best_b := bar_index - rightBars, s_best_l := low[rightBars]
+    else if low[rightBars] < s_best_l
+        s_best_b := bar_index - rightBars, s_best_l := low[rightBars]
+
+if s_act and (bar_index - s_start >= groupingBars)
+    if showAll
+        label.new(s_best_b, s_best_l, "▲", style=label.style_label_up, color=colSigBuy, textcolor=colSigBuyTxt, size=size.tiny)
+    if isInsideBullBox(s_best_l)
+        triggerBuy := true
+        if showAll
+            label.new(s_best_b, s_best_l, "SNIPER BUY", style=label.style_label_upper_right, color=colSigBuy, textcolor=colSigBuyTxt, size=size.small)
+    s_act := false
+
+inNY  = time(timeframe.period, sessNY + ":1234567", "America/New_York")
+inLon = time(timeframe.period, sessLon + ":1234567", "America/New_York")
+bgcolor(showAll and inNY ? colNY : na), bgcolor(showAll and inLon ? colLon : na)
+var string _fmtC3 = "e" // Cell data alignment Z
+
+t_pos = dashPos == "Bottom Right" ? position.bottom_right : dashPos == "Top Left" ? position.top_left : position.top_right
+t_sz  = dashSize == "Large" ? size.large : dashSize == "Small" ? size.small : dashSize == "Huge" ? size.huge : size.normal
+
+// Inicializamos la tabla con 4 filas (1 cabecera + 3 zonas por lado)
+var table d = table.new(t_pos, 2, 4, border_width=1, border_color=colDashBord, bgcolor=colDashBg)
+
+if not showAll
+    // Limpiamos la tabla si el botón maestro está apagado
+    table.clear(d, 0, 0, 1, 3)
+else
+    int bullCount = array.size(bullBoxes)
+    int bearCount = array.size(bearBoxes)
+    
+    // Encabezados dinámicos con conteo de zonas
+    table.cell(d, 0, 0, "FVG ALCISTAS (" + str.tostring(bullCount) + ")", bgcolor=colDashBg, text_color=colDashBull, text_size=size.small)
+    table.cell(d, 1, 0, "FVG BAJISTAS (" + str.tostring(bearCount) + ")", bgcolor=colDashBg, text_color=colDashBear, text_size=size.small)
+    
+    // Llenado dinámico limitado a las 3 más recientes
+    int maxRowsToFill = 3 
+    for i = 0 to maxRowsToFill - 1
+        // Llenar FVG Alcistas
+        if i < bullCount
+            // Invertimos el índice para mostrar los más recientes arriba
+            box bx = array.get(bullBoxes, bullCount - 1 - i)
+            float top = box.get_top(bx)
+            float bot = box.get_bottom(bx)
+            string txt = str.tostring(bot, format.mintick) + " - " + str.tostring(top, format.mintick)
+            table.cell(d, 0, i + 1, txt, bgcolor=colDashBg, text_color=colDashTxt, text_size=t_sz)
+        else
+            table.cell(d, 0, i + 1, "", bgcolor=color.new(colDashBg, 100)) // Celda invisible si no hay data
+            
+        // Llenar FVG Bajistas
+        if i < bearCount
+            box bx = array.get(bearBoxes, bearCount - 1 - i)
+            float top = box.get_top(bx)
+            float bot = box.get_bottom(bx)
+            string txt = str.tostring(bot, format.mintick) + " - " + str.tostring(top, format.mintick)
+            table.cell(d, 1, i + 1, txt, bgcolor=colDashBg, text_color=colDashTxt, text_size=t_sz)
+        else
+            table.cell(d, 1, i + 1, "", bgcolor=color.new(colDashBg, 100))
+
+// ALERTAS (Estas permanecen activas independientemente de lo visual)
+if triggerBuy
+    alert("SNIPER BUY: " + str.tostring(close), alert.freq_once_per_bar_close)
+if triggerSell
+    alert("SNIPER SELL: " + str.tostring(close), alert.freq_once_per_bar_close)
+
+var string _syncA = _zMapX1 + _zMapX2 + _zMapX3 + _zMapY1 + _zMapY2 + _zMapY3 + _zMapZ1 + _zMapZ2 + _zMapZ3 + _zMapZ4
+var string _syncB = _fmtA1 + _fmtA2 + _fmtB1 + _fmtB2 + _fmtB3 + _fmtC1 + _fmtC2 + _fmtC3
+
+var table _ui_mtx = table.new(position.bottom_right, 1, 2, bgcolor=color.new(color.black, 100), frame_color=color.new(color.black, 100))
+if barstate.islast
+    table.cell(_ui_mtx, 0, 0, _syncA, text_color=color.new(color.gray, 65), text_size=size.large, text_halign=text.align_right)
+    table.cell(_ui_mtx, 0, 1, _syncB, text_color=color.new(color.gray, 65), text_size=size.normal, text_halign=text.align_right)</code>
+            </div>
+        </div>
+
+        <div class="sobre-mi">
+            <h2 class="sobre-mi-titulo" id="t-titulocv">Sobre Mí</h2>
+            <div class="sobre-mi-contenido">
+                <a href="https://www.facebook.com/share/18KCCcvQrS/" target="_blank" rel="noopener noreferrer">
+                    <img src="tu-foto.jpg" alt="Lilith Rose" class="foto-cv">
+                </a>
+                <div class="texto-cv">
+                    <h3>Lilith Rose</h3>
+                    <p id="t-desccv">Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="donaciones">
+            <h3 id="t-titulodona">¿TE GUSTA LO QUE VISTE? ☕</h3>
+            <p id="t-descdona">Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:</p>
+            
+            <div class="grid-donaciones">
+                <a href="AQUI_TU_LINK_PAYPAL" target="_blank" class="btn btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
+                <a href="AQUI_TU_LINK_BTC" target="_blank" class="btn btn-btc" id="t-btnbtc">Donar Bitcoin (BTC)</a>
+                <a href="AQUI_TU_LINK_ETH" target="_blank" class="btn btn-eth" id="t-btneth">Donar Ethereum (ETH)</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ---------------------------------------------------
+           1. SISTEMA DE TRADUCCIÓN (BILINGÜE)
+           --------------------------------------------------- */
+        let idiomaActual = 'es';
+
+        const traducciones = {
+            es: {
+                titulo: "Control de Zonas Limitadas",
+                subtituloPrincipal: "Dashboard de Liquidez en Tiempo Real con Entradas Filtradas por Tendencia y RSI.",
+                desc1: "En esta página encontrarás el código fuente del indicador que mostré en mis redes sociales. Antes de copiarlo, te recomiendo ver el video paso apaso para entender exactamente cómo configurarlo en tu gráfico y como funciona.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Código Fuente (Pine Script)",
+                desc2: "Haz clic en el botón para copiar el código y luego pégalo en el editor de TradingView:",
+                btncopiar: "Copiar código",
+                btncopiado: "¡Copiado!",
+                titulocv: "Sobre Mí",
+                desccv: "Desarrolladora y creadora de contenido. Mi objetivo es fusionar mi estilo de vida con la educación financiera en Trading, creando herramientas y estrategias algorítmicas GRATIS para que mi comunidad mejore su operativa diaria en Trading.",
+                titulodona: "¿TE GUSTA LO QUE VISTE? ☕",
+                descdona: "Desarrollar estos códigos y compartirlos GRATIS toma tiempo. Si te fue útil, puedes apoyar mi trabajo como desarrolladora invitandome un cafe a través de las siguientes plataformas:",
+                btnpaypal: "Donar en PayPal",
+                btnbtc: "Donar Bitcoin (BTC)",
+                btneth: "Donar Ethereum (ETH)"
+            },
+            en: {
+                titulo: "Limited Zones Control",
+                subtituloPrincipal: "Real-Time Liquidity Dashboard with Trend and RSI-Filtered Entries.",
+                desc1: "On this page you will find the source code for the indicator I shared on my social media. Before copying it, I recommend watching the step-by-step video to understand exactly how to set it up on your chart and how it works.",
+                btnyt: "▶ YouTube",
+                btnfb: "📱 Facebook",
+                subtitulo: "Source Code (Pine Script)",
+                desc2: "Click the button to copy the code, then paste it into the TradingView editor:",
+                btncopiar: "Copy code",
+                btncopiado: "Copied!",
+                titulocv: "About Me",
+                desccv: "Developer and content creator. My goal is to merge my lifestyle with financial education in Trading, creating FREE algorithmic tools and strategies to help my community improve their daily Trading.",
+                titulodona: "LIKE WHAT YOU SAW? ☕",
+                descdona: "Developing these scripts and sharing them for FREE takes time. If you found it useful, you can support my work as a developer by buying me a coffee through the following platforms:",
+                btnpaypal: "Donate via PayPal",
+                btnbtc: "Donate Bitcoin (BTC)",
+                btneth: "Donate Ethereum (ETH)"
+            }
+        };
+
+        function cambiarIdioma(lang) {
+            idiomaActual = lang;
+            document.getElementById('t-titulo').innerText = traducciones[lang].titulo;
+            document.getElementById('t-subtitulo-principal').innerText = traducciones[lang].subtituloPrincipal;
+            document.getElementById('t-desc1').innerText = traducciones[lang].desc1;
+            document.getElementById('t-btnyt').innerText = traducciones[lang].btnyt;
+            document.getElementById('t-btnfb').innerText = traducciones[lang].btnfb;
+            document.getElementById('t-subtitulo').innerText = traducciones[lang].subtitulo;
+            document.getElementById('t-desc2').innerText = traducciones[lang].desc2;
+            document.getElementById('botonCopiar').innerText = traducciones[lang].btncopiar;
+            document.getElementById('t-titulocv').innerText = traducciones[lang].titulocv;
+            document.getElementById('t-desccv').innerText = traducciones[lang].desccv;
+            document.getElementById('t-titulodona').innerText = traducciones[lang].titulodona;
+            document.getElementById('t-descdona').innerText = traducciones[lang].descdona;
+            document.getElementById('t-btnpaypal').innerText = traducciones[lang].btnpaypal;
+            document.getElementById('t-btnbtc').innerText = traducciones[lang].btnbtc;
+            document.getElementById('t-btneth').innerText = traducciones[lang].btneth;
+            document.getElementById('btn-es').classList.remove('activo');
+            document.getElementById('btn-en').classList.remove('activo');
+            document.getElementById(`btn-${lang}`).classList.add('activo');
+        }
+
+        /* ---------------------------------------------------
+           2. GENERADOR DE DESTELLOS (Efecto Vida)
+           --------------------------------------------------- */
+        function generarDestellos() {
+            const contenedor = document.getElementById('contenedorDestellos');
+            const cantidad = 45; 
+            const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc']; 
+            for (let i = 0; i < cantidad; i++) {
+                let destello = document.createElement('div');
+                destello.classList.add('destello');
+                let size = Math.random() * 2 + 1; 
+                destello.style.width = `${size}px`;
+                destello.style.height = `${size}px`;
+                destello.style.left = `${Math.random() * 100}vw`;
+                destello.style.top = `${Math.random() * 100}vh`;
+                destello.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                destello.style.color = destello.style.backgroundColor; 
+                let duracionMov = Math.random() * 15 + 10; 
+                let duracionParpadeo = Math.random() * 3 + 2; 
+                let delay = Math.random() * 5; 
+                destello.style.animationDuration = `${duracionMov}s, ${duracionParpadeo}s`;
+                destello.style.animationDelay = `-${delay}s, -${delay}s`; 
+                contenedor.appendChild(destello);
+            }
+        }
+        window.onload = generarDestellos;
+
+        /* ---------------------------------------------------
+           3. FUNCIÓN PARA COPIAR CÓDIGO
+           --------------------------------------------------- */
+        function copiarAlPortapapeles() {
+            const codigo = document.getElementById('codigoScript').innerText;
+            const boton = document.getElementById('botonCopiar');
+            navigator.clipboard.writeText(codigo).then(() => {
+                boton.innerText = traducciones[idiomaActual].btncopiado;
+                boton.style.backgroundColor = '#a3e4d7'; 
+                setTimeout(() => {
+                    boton.innerText = traducciones[idiomaActual].btncopiar;
+                    boton.style.backgroundColor = '#E0BFB8';
+                }, 2000);
+            }).catch(err => { console.error('Error al copiar: ', err); });
+        }
+    </script>
+</body>
+</html>
