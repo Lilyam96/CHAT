@@ -300,24 +300,43 @@
         }
 
         async function enviarMensaje() {
-            const input = document.getElementById('chat-input');
-            const container = document.getElementById('chat-messages');
-            const typing = document.getElementById('typing');
-            
-            if (input.value.trim() === "") return;
+    const input = document.getElementById('chat-input');
+    const container = document.getElementById('chat-messages');
+    const typing = document.getElementById('typing');
+    
+    if (input.value.trim() === "") return;
 
-            const userText = input.value;
-            container.innerHTML += `<div style="align-self: flex-end; background: #E0BFB8; color: #111; padding: 8px 12px; border-radius: 15px 15px 5px 15px; max-width: 80%; font-weight: 500;">${userText}</div>`;
-            input.value = "";
+    const userText = input.value;
+    container.innerHTML += `<div style="align-self: flex-end; background: #E0BFB8; color: #111; padding: 8px 12px; border-radius: 15px 15px 5px 15px; max-width: 80%; font-weight: 500;">${userText}</div>`;
+    input.value = "";
+    container.scrollTop = container.scrollHeight;
+    
+    typing.style.display = "block";
+
+    try {
+        const response = await fetch('/api/chat', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userText })
+        });
+
+        const data = await response.json();
+        // Ajuste para leer la respuesta de la función api/chat
+        const rIA = data.candidates[0].content.parts[0].text;
+
+        const delayEscritura = Math.floor(Math.random() * (73000 - 12000 + 1)) + 12000;
+
+        setTimeout(() => {
+            typing.style.display = "none";
+            container.innerHTML += `<div style="align-self: flex-start; background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8; max-width: 85%; line-height: 1.4;">${rIA}</div>`;
             container.scrollTop = container.scrollHeight;
-            
-            typing.style.display = "block";
+        }, delayEscritura);
 
-            try {
-                const response = await fetch('/api/chat', { 
-    method: 'POST',
-    body: JSON.stringify({ message: userText })
-});
+    } catch (error) {
+        typing.style.display = "none";
+        console.error("Error:", error);
+    }
+}
 
                 const data = await response.json();
                 const rIA = data.candidates[0].content.parts[0].text;
