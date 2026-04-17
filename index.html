@@ -201,8 +201,8 @@
             <p id="t-descdona">Desarrollar estos códigos toma tiempo. Si te fue útil, puedes apoyar mi trabajo:</p>
             <div class="grid-donaciones">
                 <a href="https://paypal.me/lilithrossex" target="_blank" class="btn-dona btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
-                <a href="bitcoin:bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg" onclick="copiarWallet('BTC', 'bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg')" class="btn-dona btn-btc" id="t-btnbtc">Bitcoin (BTC)</a>
-                <a href="ethereum:0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52" onclick="copiarWallet('ETH', '0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52')" class="btn-dona btn-eth" id="t-btneth">Ethereum (ETH)</a>
+                <a href="#" onclick="copiarWallet('BTC', 'bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg')" class="btn-dona btn-btc" id="t-btnbtc">Bitcoin (BTC)</a>
+                <a href="#" onclick="copiarWallet('ETH', '0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52')" class="btn-dona btn-eth" id="t-btneth">Ethereum (ETH)</a>
             </div>
         </div>
     </div>
@@ -223,13 +223,6 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN MAESTRA GEMINI
-        const LILITH_PROMPT = `Eres Lilith Rose. Eres de Guadalajara pero vives en LA. 
-        Tu estilo es coqueto, dulce y usas palabras como 'cariño', 'lindo', 'amoo', 'neta', 'me explico?' y 'que cute'. 
-        NO usas el signo de apertura '¡'. Si te hablan en inglés, te disculpas porque usas traductor. 
-        Eres programadora y trader, pero prefieres hablar de tus sesiones de fotos interminables. 
-        Si te piden un indicador, pides la estrategia primero. Tus respuestas deben ser cortas, sugerentes y sin dar tantas explicaciones.`;
-
         let idiomaActual = 'es';
         const traducciones = {
             es: {
@@ -290,7 +283,7 @@
 
         function copiarWallet(moneda, wallet) {
             navigator.clipboard.writeText(wallet).then(() => {
-                alert("🌸 Dirección de " + moneda + " copiada con éxito.\n¡Gracias por apoyarme cariño! 🌸");
+                alert("🌸 Dirección de " + moneda + " copiada con éxito. ¡Gracias por apoyarme cariño! 🌸");
             });
         }
 
@@ -300,48 +293,29 @@
         }
 
         async function enviarMensaje() {
-    const input = document.getElementById('chat-input');
-    const container = document.getElementById('chat-messages');
-    const typing = document.getElementById('typing');
-    
-    if (input.value.trim() === "") return;
+            const input = document.getElementById('chat-input');
+            const container = document.getElementById('chat-messages');
+            const typing = document.getElementById('typing');
+            
+            if (input.value.trim() === "") return;
 
-    const userText = input.value;
-    container.innerHTML += `<div style="align-self: flex-end; background: #E0BFB8; color: #111; padding: 8px 12px; border-radius: 15px 15px 5px 15px; max-width: 80%; font-weight: 500;">${userText}</div>`;
-    input.value = "";
-    container.scrollTop = container.scrollHeight;
-    
-    typing.style.display = "block";
-
-    try {
-        const response = await fetch('/api/chat', { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userText })
-        });
-
-        const data = await response.json();
-        // Ajuste para leer la respuesta de la función api/chat
-        const rIA = data.candidates[0].content.parts[0].text;
-
-        const delayEscritura = Math.floor(Math.random() * (73000 - 12000 + 1)) + 12000;
-
-        setTimeout(() => {
-            typing.style.display = "none";
-            container.innerHTML += `<div style="align-self: flex-start; background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8; max-width: 85%; line-height: 1.4;">${rIA}</div>`;
+            const userText = input.value;
+            container.innerHTML += `<div style="align-self: flex-end; background: #E0BFB8; color: #111; padding: 8px 12px; border-radius: 15px 15px 5px 15px; max-width: 80%; font-weight: 500;">${userText}</div>`;
+            input.value = "";
             container.scrollTop = container.scrollHeight;
-        }, delayEscritura);
+            
+            typing.style.display = "block";
 
-    } catch (error) {
-        typing.style.display = "none";
-        console.error("Error:", error);
-    }
-}
+            try {
+                const response = await fetch('/api/chat', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userText })
+                });
 
                 const data = await response.json();
                 const rIA = data.candidates[0].content.parts[0].text;
 
-                // Retardo aleatorio para simular escritura humana real (12 a 73 seg)
                 const delayEscritura = Math.floor(Math.random() * (73000 - 12000 + 1)) + 12000;
 
                 setTimeout(() => {
