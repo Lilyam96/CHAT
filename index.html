@@ -21,11 +21,15 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
+        /* CAPA DE DESTELLOS - AHORA ENFRENTE PERO SIN AFECTAR CLICS */
         .capa-vida {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 9999; pointer-events: none; overflow: hidden;
+            z-index: 20000; /* Por encima de todo, incluyendo el chat */
+            pointer-events: none; /* MAGIA: Los clics pasan a través */
+            overflow: hidden;
         }
 
         .destello {
@@ -61,6 +65,7 @@
             box-sizing: border-box; 
             margin-top: 20px;
             position: relative; 
+            z-index: 2; /* Contenido base */
         }
 
         .header-perfil {
@@ -83,13 +88,14 @@
         }
         
         .foto-perfil:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(224, 191, 184, 0.4);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(224, 191, 184, 0.5);
         }
 
         h1 { color: #E0BFB8; margin: 0 0 10px 0; letter-spacing: 1px; }
         .subtitulo-principal { font-style: italic; color: #E0BFB8; opacity: 0.8; margin: 0; }
 
+        /* GRID INDICADORES */
         .grid-indicadores {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -104,11 +110,17 @@
             padding: 25px;
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
         }
 
-        .tarjeta-indicador h3 { color: #fff; border-left: 3px solid #E0BFB8; padding-left: 10px; }
-        .tarjeta-indicador p { color: #aaa; font-size: 0.9em; flex-grow: 1; }
+        .tarjeta-indicador:hover {
+            transform: translateY(-5px);
+            border-color: #E0BFB8;
+            background: rgba(224, 191, 184, 0.05);
+        }
+
+        .tarjeta-indicador h3 { color: #fff; border-left: 3px solid #E0BFB8; padding-left: 10px; margin-top: 0; }
+        .tarjeta-indicador p { color: #aaa; font-size: 0.9em; flex-grow: 1; line-height: 1.4; }
 
         .btn-ver-codigo {
             background-color: #E0BFB8;
@@ -119,23 +131,41 @@
             text-decoration: none;
             font-weight: bold;
             margin-top: 15px;
+            transition: background 0.2s;
         }
+        .btn-ver-codigo:hover { background-color: #d1ada5; }
 
+        /* =========================================
+           SECCIÓN DONACIONES Y EFECTOS
+           ========================================= */
         .donaciones {
             margin-top: 50px;
             padding-top: 30px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
         }
+        
         .grid-donaciones {
             display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px;
         }
+
         .btn-dona {
             position: relative; padding: 14px 28px; text-decoration: none; color: white;
             font-weight: bold; border-radius: 8px; overflow: hidden; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: transform 0.2s; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: transform 0.2s; cursor: pointer; border: none;
         }
+
+        /* Efecto de Brillo (Shine) */
+        .btn-dona::after {
+            content: '';
+            position: absolute; top: -50%; left: -60%; width: 20%; height: 200%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(30deg);
+            transition: all 0.5s;
+        }
+        .btn-dona:hover::after { left: 120%; }
         .btn-dona:hover { transform: translateY(-3px); }
+
         .btn-paypal { background-color: #00457C; }
         .btn-btc { background-color: #F7931A; }
         .btn-eth { background-color: #627EEA; }
@@ -198,18 +228,21 @@
 
         <div class="donaciones">
             <h3 id="t-titulodona">¿TE GUSTA LO QUE VISTE? ☕</h3>
-            <p id="t-descdona">Desarrollar estos códigos toma tiempo. Si te fue útil, puedes apoyar mi trabajo:</p>
+            <p id="t-descdona">Apoya mi trabajo para seguir subiendo códigos gratis:</p>
             <div class="grid-donaciones">
                 <a href="https://paypal.me/lilithrossex" target="_blank" class="btn-dona btn-paypal" id="t-btnpaypal">Donar en PayPal</a>
-                <a href="#" onclick="copiarWallet('BTC', 'bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg')" class="btn-dona btn-btc" id="t-btnbtc">Bitcoin (BTC)</a>
-                <a href="#" onclick="copiarWallet('ETH', '0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52')" class="btn-dona btn-eth" id="t-btneth">Ethereum (ETH)</a>
+                <button onclick="copiarWallet('BTC', 'bc1q8ay3npraju0sjj6vtcrj78f7cqmwe7trf846zg')" class="btn-dona btn-btc" id="t-btnbtc">Bitcoin (BTC)</button>
+                <button onclick="copiarWallet('ETH', '0x658AD1BA9200c2b02cdB1919290e980de0C6Ce52')" class="btn-dona btn-eth" id="t-btneth">Ethereum (ETH)</button>
             </div>
         </div>
     </div>
 
     <div id="chat-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 10000; font-family: 'Segoe UI', sans-serif;">
         <div id="chat-window" style="display: none; width: 320px; height: 450px; background: rgba(15, 15, 15, 0.98); border: 1px solid #E0BFB8; border-radius: 20px; flex-direction: column; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.7); backdrop-filter: blur(15px);">
-            <div style="background: #E0BFB8; color: #111; padding: 12px; font-weight: bold; text-align: center;">🌸 LILITH ROSE 🌸</div>
+            <div style="background: #E0BFB8; color: #111; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold;">
+                <img src="chat-lilith.jpg" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid #111;">
+                <span style="font-size: 0.9em;">🌸 LILITH ROSE 🌸</span>
+            </div>
             <div id="chat-messages" style="flex-grow: 1; padding: 15px; overflow-y: auto; color: #eee; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
                 <div style="background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8;">Holii, lindo! Soy Lilith. 🌸 Amooo que estés aquí... en qué puedo ayudarte hoy, cariño?</div>
             </div>
@@ -219,10 +252,19 @@
                 <button onclick="enviarMensaje()" style="background: #E0BFB8; border: none; border-radius: 50%; cursor: pointer; width: 35px; height: 35px;">✨</button>
             </div>
         </div>
-        <button onclick="toggleChat()" style="width: 65px; height: 65px; border-radius: 50%; background: #E0BFB8; border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.4); font-size: 28px;">🌸</button>
+        <button onclick="toggleChat()" style="width: 65px; height: 65px; border-radius: 50%; background: #E0BFB8; border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.4); overflow: hidden;">
+            <img src="chat-lilith.jpg" style="width: 100%; height: 100%; object-fit: cover;">
+        </button>
     </div>
 
     <script>
+        // CONFIGURACIÓN MAESTRA DE LILITH
+        const LILITH_PROMPT = `Eres Lilith Rose. Eres de Guadalajara pero vives en LA. 
+        Tu estilo es coqueto, dulce y usas palabras como 'cariño', 'lindo', 'amoo', 'neta', 'me explico?' y 'que cute'. 
+        NO usas el signo de apertura '¡'. Si te hablan en inglés, te disculpas porque usas traductor. 
+        Eres programadora y trader, pero prefieres hablar de tus sesiones de fotos interminables. 
+        Si te piden un indicador, pides la estrategia primero. Tus respuestas deben ser cortas, sugerentes y sin dar tantas explicaciones.`;
+
         let idiomaActual = 'es';
         const traducciones = {
             es: {
@@ -232,17 +274,17 @@
                 tit3: "Smart Money & Liquidez", desc3: "Detección Avanzada de Fibo y Breaker Blocks con Validación de Volumen POC.",
                 tit4: "Perfil de Volumen Anclado", desc4: "Detección de POC Histórico y Nodos de Alto Volumen con Proyección al Pasado.",
                 tit5: "Sistema Sniper Institucional", desc5: "Control de Zonas Limitadas, Detección Dinámica de Imbalances (FVGs) y Señales.",
-                btnText: "Ver Código", titulodona: "¿TE GUSTA LO QUE VISTE? ☕", descdona: "Apoya mi trabajo:",
+                btnText: "Ver Código", titulodona: "¿TE GUSTA LO QUE VISTE? ☕", descdona: "Apoya mi trabajo para seguir subiendo códigos gratis:",
                 btnpaypal: "Donar en PayPal", btnbtc: "Bitcoin (BTC)", btneth: "Ethereum (ETH)"
             },
             en: {
                 subtitulo: "Algorithmic Trading Indicators & Strategies Vault",
                 tit1: "Filtered Fractals", desc1: "Grouped Extremes Detection with Trend and Volatility Filters.",
                 tit2: "Sniper Dual Display", desc2: "Price Action Signals for High-Risk Binary Options with 5-Minute Block Evaluation.",
-                tit3: "Smart Money Concepts & Liquidity", desc3: "Advanced Fibo & Breaker Block Detection with Volume POC Validation.",
+                tit3: "Smart Money Concepts & Liquidez", desc3: "Advanced Fibo & Breaker Block Detection with Volume POC Validation.",
                 tit4: "Anchored Volume Profile", desc4: "Historical POC Detection and High Volume Nodes with Past Projection.",
                 tit5: "Institutional Sniper System", desc5: "Limited Zones Control, Dynamic Imbalances (FVGs), and Validated Signals.",
-                btnText: "View Code", titulodona: "LIKE WHAT YOU SAW? ☕", descdona: "Support my work:",
+                btnText: "View Code", titulodona: "LIKE WHAT YOU SAW? ☕", descdona: "Support my work to keep uploading free scripts:",
                 btnpaypal: "Donate via PayPal", btnbtc: "Bitcoin (BTC)", btneth: "Ethereum (ETH)"
             }
         };
@@ -264,6 +306,7 @@
             document.getElementById('btn-en').classList.toggle('activo', lang==='en');
         }
 
+        // GENERADOR DE MAGIA (DESTELLOS)
         function generarDestellos() {
             const contenedor = document.getElementById('contenedorDestellos');
             const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc', '#ffb6c1', '#b19cd9']; 
@@ -272,18 +315,18 @@
                 d.className = 'destello';
                 d.style.width = d.style.height = `${Math.random() * 3 + 1}px`; 
                 d.style.left = `${Math.random() * 100}vw`; d.style.top = `${Math.random() * 100}vh`;
-                d.style.backgroundColor = d.style.color = colores[Math.floor(Math.random() * colores.length)];
+                d.style.backgroundColor = colores[Math.floor(Math.random() * colores.length)];
+                d.style.color = d.style.backgroundColor;
                 let delay = Math.random() * 5; 
                 d.style.animationDuration = `${Math.random() * 15 + 10}s, ${Math.random() * 3 + 2}s`;
                 d.style.animationDelay = `-${delay}s, -${delay}s`; 
                 contenedor.appendChild(d);
             }
         }
-        window.onload = generarDestellos;
 
         function copiarWallet(moneda, wallet) {
             navigator.clipboard.writeText(wallet).then(() => {
-                alert("🌸 Dirección de " + moneda + " copiada con éxito. ¡Gracias por apoyarme cariño! 🌸");
+                alert("🌸 Dirección de " + moneda + " copiada. ¡Gracias por apoyarme cariño! 🌸");
             });
         }
 
@@ -307,28 +350,35 @@
             typing.style.display = "block";
 
             try {
-                const response = await fetch('/api/chat', { 
+                // LLAMADA DIRECTA CON LLAVE (VERSIÓN GRATIS)
+                const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6K5UnnbAhRVq9HB3Duw58ptSaAGXleIhh3VMvTMmEHKYQ', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userText })
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: LILITH_PROMPT + "\nUsuario dice: " + userText }] }]
+                    })
                 });
 
                 const data = await response.json();
                 const rIA = data.candidates[0].content.parts[0].text;
 
-                const delayEscritura = Math.floor(Math.random() * (73000 - 12000 + 1)) + 12000;
-
+                // Lilith se toma su tiempo para responder
                 setTimeout(() => {
                     typing.style.display = "none";
                     container.innerHTML += `<div style="align-self: flex-start; background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8; max-width: 85%; line-height: 1.4;">${rIA}</div>`;
                     container.scrollTop = container.scrollHeight;
-                }, delayEscritura);
+                }, 2000);
 
             } catch (error) {
                 typing.style.display = "none";
                 console.error("Error:", error);
             }
         }
+
+        // INICIAR MAGIA AL CARGAR
+        window.onload = function() {
+            generarDestellos();
+        };
     </script>
 </body>
 </html>
