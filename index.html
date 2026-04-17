@@ -24,11 +24,11 @@
             overflow-x: hidden;
         }
 
-        /* CAPA DE DESTELLOS - AHORA ENFRENTE PERO SIN AFECTAR CLICS */
+        /* CAPA DE DESTELLOS - ENFRENTE PERO SIN AFECTAR CLICS */
         .capa-vida {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            z-index: 20000; /* Por encima de todo, incluyendo el chat */
-            pointer-events: none; /* MAGIA: Los clics pasan a través */
+            z-index: 20000; 
+            pointer-events: none; 
             overflow: hidden;
         }
 
@@ -65,7 +65,7 @@
             box-sizing: border-box; 
             margin-top: 20px;
             position: relative; 
-            z-index: 2; /* Contenido base */
+            z-index: 2; 
         }
 
         .header-perfil {
@@ -95,7 +95,6 @@
         h1 { color: #E0BFB8; margin: 0 0 10px 0; letter-spacing: 1px; }
         .subtitulo-principal { font-style: italic; color: #E0BFB8; opacity: 0.8; margin: 0; }
 
-        /* GRID INDICADORES */
         .grid-indicadores {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -133,11 +132,7 @@
             margin-top: 15px;
             transition: background 0.2s;
         }
-        .btn-ver-codigo:hover { background-color: #d1ada5; }
 
-        /* =========================================
-           SECCIÓN DONACIONES Y EFECTOS
-           ========================================= */
         .donaciones {
             margin-top: 50px;
             padding-top: 30px;
@@ -155,7 +150,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: transform 0.2s; cursor: pointer; border: none;
         }
 
-        /* Efecto de Brillo (Shine) */
         .btn-dona::after {
             content: '';
             position: absolute; top: -50%; left: -60%; width: 20%; height: 200%;
@@ -258,13 +252,6 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN MAESTRA DE LILITH
-        const LILITH_PROMPT = `Eres Lilith Rose. Eres de Guadalajara pero vives en LA. 
-        Tu estilo es coqueto, dulce y usas palabras como 'cariño', 'lindo', 'amoo', 'neta', 'me explico?' y 'que cute'. 
-        NO usas el signo de apertura '¡'. Si te hablan en inglés, te disculpas porque usas traductor. 
-        Eres programadora y trader, pero prefieres hablar de tus sesiones de fotos interminables. 
-        Si te piden un indicador, pides la estrategia primero. Tus respuestas deben ser cortas, sugerentes y sin dar tantas explicaciones.`;
-
         let idiomaActual = 'es';
         const traducciones = {
             es: {
@@ -306,7 +293,6 @@
             document.getElementById('btn-en').classList.toggle('activo', lang==='en');
         }
 
-        // GENERADOR DE MAGIA (DESTELLOS)
         function generarDestellos() {
             const contenedor = document.getElementById('contenedorDestellos');
             const colores = ['#E0BFB8', '#fcfcfc', '#00ffcc', '#ffb6c1', '#b19cd9']; 
@@ -339,56 +325,35 @@
             const input = document.getElementById('chat-input');
             const container = document.getElementById('chat-messages');
             const typing = document.getElementById('typing');
-            
             if (input.value.trim() === "") return;
 
             const userText = input.value;
             container.innerHTML += `<div style="align-self: flex-end; background: #E0BFB8; color: #111; padding: 8px 12px; border-radius: 15px 15px 5px 15px; max-width: 80%; font-weight: 500;">${userText}</div>`;
             input.value = "";
             container.scrollTop = container.scrollHeight;
-            
             typing.style.display = "block";
 
             try {
                 const response = await fetch('/.netlify/functions/chat', { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userText })
-        });
-
-        const data = await response.json();
-        const rIA = data.candidates[0].content.parts[0].text;
-
-        // Lilith responde
-        setTimeout(() => {
-            typing.style.display = "none";
-            container.innerHTML += `<div style="align-self: flex-start; background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8; max-width: 85%; line-height: 1.4;">${rIA}</div>`;
-            container.scrollTop = container.scrollHeight;
-        }, 2000);
-
-    } catch (error) {
-        typing.style.display = "none";
-        console.error("Error:", error);
-    }
-}
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userText })
+                });
 
                 const data = await response.json();
                 const rIA = data.candidates[0].content.parts[0].text;
 
-                // Lilith se toma su tiempo para responder
                 setTimeout(() => {
                     typing.style.display = "none";
                     container.innerHTML += `<div style="align-self: flex-start; background: rgba(224, 191, 184, 0.1); padding: 10px; border-radius: 15px 15px 15px 5px; border-left: 3px solid #E0BFB8; max-width: 85%; line-height: 1.4;">${rIA}</div>`;
                     container.scrollTop = container.scrollHeight;
                 }, 2000);
-
             } catch (error) {
                 typing.style.display = "none";
                 console.error("Error:", error);
             }
         }
 
-        // INICIAR MAGIA AL CARGAR
         window.onload = function() {
             generarDestellos();
         };
